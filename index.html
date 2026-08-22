@@ -305,6 +305,43 @@ body.child .score-strip{display:none!important;}
 .shake{animation:shk .4s;}
 @keyframes shk{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
 
+
+/* ══ OFFICIAL RESULTS (print) ══ */
+#printarea{display:none;}
+@media print{
+  body > *{display:none !important;}
+  #printarea{display:block !important;}
+  @page{size:A4 portrait;margin:13mm 12mm;}
+  body{background:#fff !important;overflow:visible !important;height:auto !important;}
+  html{height:auto !important;overflow:visible !important;}
+}
+#printarea{background:#fff;color:#111;font-family:'Montserrat',Arial,sans-serif;}
+.rep{page-break-after:always;padding-bottom:6mm;}
+.rep:last-child{page-break-after:auto;}
+.rep-head{display:flex;align-items:center;gap:12px;border-bottom:2.5px solid #C9A227;padding-bottom:8px;}
+.rep-head img{height:52px;border-radius:5px;}
+.rep-head .org{font-family:'Bebas Neue',Arial,sans-serif;font-size:20px;letter-spacing:2px;color:#0D1B2A;line-height:1.15;}
+.rep-head .sub{font-size:9.5px;letter-spacing:1.4px;color:#555;text-transform:uppercase;margin-top:2px;}
+.rep-title{text-align:center;margin:14px 0 4px;font-family:'Bebas Neue',Arial,sans-serif;font-size:22px;letter-spacing:2.5px;color:#0D1B2A;}
+.rep-sub{text-align:center;font-size:11px;color:#444;margin-bottom:12px;}
+.rep-meta{display:flex;justify-content:space-between;font-size:9.5px;color:#555;border:1px solid #ddd;background:#fafafa;padding:6px 10px;border-radius:4px;margin-bottom:10px;}
+table.rt{width:100%;border-collapse:collapse;font-size:10px;margin-bottom:12px;}
+table.rt th{background:#0D1B2A;color:#fff;padding:6px 7px;text-align:left;font-size:9px;letter-spacing:.6px;text-transform:uppercase;border:1px solid #0D1B2A;}
+table.rt td{padding:5px 7px;border:1px solid #d8d8d8;vertical-align:top;}
+table.rt tr:nth-child(even) td{background:#f7f7f7;}
+table.rt td.num,table.rt th.num{text-align:center;white-space:nowrap;}
+table.rt td.tot{font-weight:800;text-align:center;background:#FFF6D6 !important;}
+table.rt tr.win td{background:#FFF2C2 !important;font-weight:800;}
+.rep-note{font-size:9px;color:#666;line-height:1.55;border-left:3px solid #C9A227;padding:5px 9px;background:#fcfaf3;margin-bottom:14px;}
+.sig-row{display:flex;gap:16px;margin-top:18px;}
+.sig{flex:1;text-align:center;font-size:9px;color:#333;}
+.sig .ln{border-bottom:1px solid #333;height:34px;margin-bottom:4px;}
+.sig .rl{font-weight:800;letter-spacing:.6px;text-transform:uppercase;}
+.sig .cap{color:#777;font-size:8px;margin-top:1px;}
+.rep-foot{margin-top:14px;border-top:1px solid #ddd;padding-top:6px;font-size:8px;color:#888;display:flex;justify-content:space-between;}
+
+.resgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0;}
+
 /* MODALS */
 .mo{display:none;position:fixed;inset:0;z-index:200;align-items:center;justify-content:center;background:rgba(0,0,0,.78);backdrop-filter:blur(6px);}
 .mo.show{display:flex;}
@@ -475,6 +512,7 @@ body.child .score-strip{display:none!important;}
     <div class="hz right">
       <button class="hb" id="b-open2" onclick="openSecond()">🖥 2nd Screen</button>
       <button class="hicon on" id="b-sound" onclick="toggleSound()" title="Sound on/off (B)">🔊</button>
+      <button class="hb" onclick="openM('m-res')" title="Official results PDF">📄 Results</button>
       <button class="hicon" onclick="openM('m-setup')" title="Teams &amp; settings">⚙</button>
       <button class="hicon" onclick="switchMode()" title="Change this device's role (M)">🔀</button>
       <button class="hicon" onclick="toggleHud()" id="b-hud" title="Hide controls (H)">👁</button>
@@ -532,6 +570,21 @@ body.child .score-strip{display:none!important;}
 
   </div>
 </div>
+
+<div id="printarea"></div>
+
+<!-- RESULTS -->
+<div class="mo" id="m-res"><div class="mb" style="width:520px;">
+  <h3>📄 Official Results</h3>
+  <div class="note">Generates an audit-ready results sheet with signature blocks. In the print dialog choose <b>Destination → Save as PDF</b>.</div>
+  <div class="resgrid">
+    <button class="mbtn mb-p" onclick="printReport('cur')">This round only</button>
+    <button class="mbtn mb-p" onclick="printReport('all')">All rounds (one file)</button>
+    <button class="mbtn mb-p" onclick="printReport('sum')">Overall summary + Champion</button>
+    <button class="mbtn mb-p" onclick="printReport('full')">Complete package</button>
+  </div>
+  <div class="ma"><button class="mbtn mb-g" onclick="closeM('m-res')">Close</button></div>
+</div></div>
 
 <!-- ADMIN PIN -->
 <div class="mo" id="m-pin"><div class="mb" style="width:420px;text-align:center;">
@@ -1186,6 +1239,110 @@ if(IS_CHILD){
   window.addEventListener('load',()=>{ try{ if(window.opener) window.opener.postMessage({type:'picpa2ready'},'*'); }catch(e){} });
 }
 window.addEventListener('message',e=>{ if(e.data&&e.data.type==='picpa2ready') pushSecond(); });
+
+/* ═══ OFFICIAL RESULTS ═══ */
+const EVENT_VENUE='International Philippine School in Jeddah (IPSJ)';
+const EVENT_DATE='22 August 2026';
+function nowStamp(){
+  const d=new Date();
+  return d.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true});
+}
+function repHead(){
+  return '<div class="rep-head"><img src="'+LOGO+'"><div><div class="org">PICPA WESTERN REGION &mdash; QUIZ BEE 2026</div>'+
+         '<div class="sub">Minds in Motion &nbsp;&middot;&nbsp; '+EVENT_VENUE+' &nbsp;&middot;&nbsp; '+EVENT_DATE+'</div></div></div>';
+}
+function sigBlock(){
+  return '<div class="sig-row">'+
+    '<div class="sig"><div class="ln"></div><div class="rl">Tabulator</div><div class="cap">Prepared by</div></div>'+
+    '<div class="sig"><div class="ln"></div><div class="rl">Quizmaster</div><div class="cap">Verified by</div></div>'+
+    '<div class="sig"><div class="ln"></div><div class="rl">Head of Judges</div><div class="cap">Attested by</div></div>'+
+    '<div class="sig"><div class="ln"></div><div class="rl">Chapter Officer</div><div class="cap">Noted by</div></div></div>';
+}
+function repFoot(n){
+  return '<div class="rep-foot"><span>Generated '+nowStamp()+' &middot; PICPA-WR Quiz Bee Command Center</span><span>'+(n||'')+'</span></div>';
+}
+function roundReport(cat){
+  const m=CAT_META[cat], bank=BANKS[cat]||[], marks=S.marks[cat]||{};
+  const played=[]; for(let i=0;i<bank.length;i++){ if((S.used[cat]||[]).includes(i)||(marks[i]&&marks[i].length)) played.push(i); }
+  const pts=(typeof m.pts==='number')?m.pts:0;
+  const rows=S.teams.map((n,ti)=>{
+    if(!n||!n.trim())return null;
+    const got=[]; Object.keys(marks).forEach(k=>{ if((marks[k]||[]).includes(ti)) got.push(parseInt(k)+1); });
+    got.sort((a,b)=>a-b);
+    return {name:n, got, correct:got.length, score:got.length*pts, total:totalScore(ti)};
+  }).filter(Boolean).sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name));
+  let rank=0,last=null;
+  rows.forEach((r,i)=>{ if(r.score!==last){rank=i+1;last=r.score;} r.rank=rank; });
+  const top=rows.length?rows[0].score:0;
+  let h='<div class="rep">'+repHead();
+  h+='<div class="rep-title">OFFICIAL ROUND RESULTS</div>';
+  h+='<div class="rep-sub"><b>'+m.label.toUpperCase()+' ROUND</b> &nbsp;&middot;&nbsp; '+m.ptsLbl+' per correct answer</div>';
+  h+='<div class="rep-meta"><span>Questions played: <b>'+played.length+'</b> of '+bank.length+'</span>'+
+     '<span>Teams: <b>'+rows.length+'</b></span><span>Maximum obtainable: <b>'+(played.length*pts)+' pts</b></span></div>';
+  h+='<table class="rt"><thead><tr><th class="num">Rank</th><th>Team</th><th>Questions answered correctly</th>'+
+     '<th class="num">Correct</th><th class="num">Round Points</th><th class="num">Cumulative</th></tr></thead><tbody>';
+  rows.forEach(r=>{
+    h+='<tr'+(r.score===top&&top>0?' class="win"':'')+'><td class="num">'+r.rank+'</td><td>'+esc(r.name)+'</td>'+
+       '<td>'+(r.got.length?r.got.map(q=>'Q'+q).join(', '):'&mdash;')+'</td>'+
+       '<td class="num">'+r.correct+'</td><td class="num">'+r.score+'</td><td class="tot">'+r.total+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  h+='<div class="rep-note"><b>Certification.</b> The scores above were recorded live during the '+m.label+
+     ' round and reflect the answers accepted by the Quizmaster and the panel of judges at the time of play. '+
+     '&ldquo;Cumulative&rdquo; shows each team&rsquo;s running total across all rounds completed to date. '+
+     'Any correction after signing must be initialled by the Head of Judges.</div>';
+  h+=sigBlock()+repFoot(m.label+' Round')+'</div>';
+  return h;
+}
+function summaryReport(){
+  const rows=S.teams.map((n,ti)=>{
+    if(!n||!n.trim())return null;
+    const per={}; ROUNDS.forEach(r=>{ per[r]=roundScore(r,ti); });
+    return {name:n, per, total:totalScore(ti)};
+  }).filter(Boolean).sort((a,b)=>b.total-a.total||a.name.localeCompare(b.name));
+  let rank=0,last=null;
+  rows.forEach((r,i)=>{ if(r.total!==last){rank=i+1;last=r.total;} r.rank=rank; });
+  const champTied=rows.filter(r=>r.rank===1).length>1;
+  let h='<div class="rep">'+repHead();
+  h+='<div class="rep-title">OFFICIAL FINAL STANDINGS</div>';
+  h+='<div class="rep-sub">Consolidated results &mdash; all rounds</div>';
+  h+='<div class="rep-meta"><span>Teams: <b>'+rows.length+'</b></span><span>Scoring: Easy 1 &middot; Average 3 &middot; Difficult 5</span>'+
+     '<span>Status: <b>'+(champTied?'TIE AT FIRST PLACE':'RESOLVED')+'</b></span></div>';
+  h+='<table class="rt"><thead><tr><th class="num">Rank</th><th>Team</th><th class="num">Easy<br>(1 pt)</th>'+
+     '<th class="num">Average<br>(3 pts)</th><th class="num">Difficult<br>(5 pts)</th><th class="num">Clincher</th>'+
+     '<th class="num">TOTAL</th></tr></thead><tbody>';
+  rows.forEach(r=>{
+    h+='<tr'+(r.rank===1&&r.total>0?' class="win"':'')+'><td class="num">'+r.rank+'</td><td>'+esc(r.name)+'</td>'+
+       '<td class="num">'+r.per.easy+'</td><td class="num">'+r.per.average+'</td><td class="num">'+r.per.difficult+
+       '</td><td class="num">'+r.per.clincher+'</td><td class="tot">'+r.total+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  if(rows.length && rows[0].total>0){
+    const pl=['CHAMPION','FIRST RUNNER-UP','SECOND RUNNER-UP'];
+    h+='<table class="rt"><thead><tr><th>Award</th><th>Team</th><th class="num">Total Points</th></tr></thead><tbody>';
+    for(let i=0;i<Math.min(3,rows.length);i++){
+      h+='<tr'+(i===0?' class="win"':'')+'><td><b>'+pl[i]+'</b></td><td>'+esc(rows[i].name)+'</td><td class="num">'+rows[i].total+'</td></tr>';
+    }
+    h+='</tbody></table>';
+  }
+  h+='<div class="rep-note"><b>Certification.</b> This consolidated statement presents the official final standings of the '+
+     'PICPA-WR Quiz Bee 2026 &ldquo;Minds in Motion&rdquo;, computed from the per-round results recorded live during the contest. '+
+     (champTied?'<b> A tie exists at first place; the Clincher (sudden-death) round governs the final ranking.</b> ':'')+
+     'All decisions of the panel of judges are final.</div>';
+  h+=sigBlock()+repFoot('Final Standings')+'</div>';
+  return h;
+}
+function printReport(kind){
+  let html='';
+  if(kind==='cur') html=roundReport(S.cat);
+  else if(kind==='all') ROUNDS.forEach(r=>{ html+=roundReport(r); });
+  else if(kind==='sum') html=summaryReport();
+  else { ROUNDS.forEach(r=>{ html+=roundReport(r); }); html+=summaryReport(); }
+  const pa=document.getElementById('printarea');
+  pa.innerHTML=html;
+  closeM('m-res');
+  setTimeout(()=>{ window.print(); }, 400);
+}
 
 /* ═══ ADMIN PIN GATE ═══ */
 function openPin(){
