@@ -358,6 +358,13 @@ table.rt tr.win td{background:#FFF2C2 !important;font-weight:800;}
 .mb-g{background:transparent;color:rgba(255,255,255,.5);border-color:rgba(255,255,255,.17);}
 .note{font-size:11px;color:rgba(255,255,255,.4);line-height:1.6;margin-bottom:10px;}
 .linkbox{background:var(--navy3);border:1.5px solid rgba(201,162,39,.25);border-radius:8px;padding:10px;font-size:11px;word-break:break-all;color:var(--gold2);margin-bottom:8px;}
+/* ── toast ── */
+#toast{position:fixed;left:50%;bottom:86px;transform:translateX(-50%) translateY(14px);
+  background:rgba(10,16,28,.96);border:1px solid rgba(212,175,55,.55);color:#f2e6c4;
+  padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;letter-spacing:.2px;
+  max-width:70vw;text-align:center;box-shadow:0 10px 34px rgba(0,0,0,.55);
+  opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:9999}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body class="hudon">
@@ -565,6 +572,7 @@ table.rt tr.win td{background:#FFF2C2 !important;font-weight:800;}
         <button class="sgb s2b" data-t="sc-winner"      onclick="setSecond('sc-winner')">Champion</button>
         <button class="sgb s2b" data-t="sc-idle"        onclick="setSecond('sc-idle')">Logo</button>
       </div>
+      <button class="hb" onclick="sendToProjector()" title="Move the 2nd screen onto the projector / external display and go full screen">⛶ To Projector</button>
       <button class="hicon" onclick="closeSecond()" title="Close 2nd screen">✕</button>
     </span>
 
@@ -1175,12 +1183,57 @@ const URL_ROLE = (QP.get('role')||'').toLowerCase();   // admin | tabulator | sc
 const ADMIN_PIN = '2026';
 let audWin=null, audTarget='mirror';
 
-function openSecond(){
+let _toastT=null;
+function toast(msg,ms){
+  const t=document.getElementById('toast'); if(!t)return;
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(_toastT); _toastT=setTimeout(()=>t.classList.remove('show'), ms||4200);
+}
+
+/* Window Management API — find the projector / external display (e.g. the Samsung TV) */
+async function extScreen(){
+  try{
+    if(!window.getScreenDetails) return null;
+    const det=await window.getScreenDetails();      // may prompt once for "Manage windows"
+    const list=det.screens||[]; if(list.length<2) return null;
+    const cur=det.currentScreen;
+    return list.find(s=>s!==cur) || list.find(s=>!s.isPrimary) || null;
+  }catch(e){ return null; }
+}
+/* Move the 2nd-screen window onto the external display and fill it */
+async function placeSecond(fs){
+  if(!audWin||audWin.closed) return false;
+  const sc=await extScreen();
+  if(sc){
+    try{ audWin.moveTo(sc.availLeft,sc.availTop); audWin.resizeTo(sc.availWidth,sc.availHeight); }catch(e){}
+  }
+  if(fs){
+    try{ const de=audWin.document.documentElement; if(de.requestFullscreen) await de.requestFullscreen(); }catch(e){}
+  }
+  try{ audWin.focus(); }catch(e){}
+  return !!sc;
+}
+function sendToProjector(){
+  if(!audWin||audWin.closed){
+    openSecond(true);
+    return;
+  }
+  placeSecond(true).then(ok=>{
+    toast(ok ? '🖥 2nd screen moved to the projector display.'
+             : 'Only one display detected — drag the 2nd-screen window onto the projector, then press F11.', 5200);
+  });
+}
+
+function openSecond(toProjector){
   if(audWin && !audWin.closed){ audWin.focus(); return; }
   const u=location.href.split('?')[0].split('#')[0]+'?screen=1';
   audWin=window.open(u,'picpa_second','width=1280,height=800');
   if(!audWin){ alert('Your browser blocked the pop-up.\n\nAllow pop-ups for this page, then click "Open 2nd Screen" again.'); return; }
     hudCtx();
+  /* best-effort: land it straight on the external display (projector / Samsung screen) */
+  setTimeout(()=>{ placeSecond(!!toProjector).then(ok=>{
+    if(!ok && toProjector) toast('Only one display detected — drag the 2nd-screen window onto the projector, then press F11.',5200);
+  }); }, 900);
   const t=setInterval(()=>{ if(!audWin||audWin.closed){ clearInterval(t); secondClosed(); } },1000);
 }
 function closeSecond(){ if(audWin&&!audWin.closed) audWin.close(); secondClosed(); }
@@ -1261,6 +1314,11 @@ function applyAud(d){
 if(IS_CHILD){
   window.addEventListener('message',e=>{ const d=e.data; if(d&&d.type==='picpa2') applyAud(d); });
   window.addEventListener('load',()=>{ try{ if(window.opener) window.opener.postMessage({type:'picpa2ready'},'*'); }catch(e){} });
+  /* double-click anywhere on the 2nd screen = full screen on / off */
+  document.addEventListener('dblclick',()=>{ try{
+    if(!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
+  }catch(e){} });
 }
 window.addEventListener('message',e=>{ if(e.data&&e.data.type==='picpa2ready') pushSecond(); });
 
@@ -1522,5 +1580,6 @@ if(IS_CHILD){
 }          // both laptops poll: scores merge live
 measHud(); setTimeout(measHud,300);
 </script>
+<div id="toast"></div>
 </body>
 </html>
