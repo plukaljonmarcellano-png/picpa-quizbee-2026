@@ -724,7 +724,7 @@ function go(id,push=true){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const el=document.getElementById(id); if(el) el.classList.add('active');
   S.screen=id;
-  if(id!=='sc-sponsors') stopSpAuto();
+  if(id!=='sc-sponsors' && !(audWin && !audWin.closed && (audTarget==='sc-sponsors'||audTarget==='mirror'&&id==='sc-sponsors'))) stopSpAuto();
   if(id==='sc-sponsors'){ renderSponsors(); }
   if(id==='sc-tab'){ renderTab(); }
   if(id==='sc-winner'){ startConfetti(); }
@@ -1125,8 +1125,10 @@ async function cloudPull(){
       S.slot=(typeof f.slot==='number')?f.slot:-1;
       if(typeof f.spIdx==='number') spIdx=f.spIdx;
       if(f.spView&&f.spView!==spView) spView=f.spView;
-      if(f.screen&&f.screen!==S.screen){ go(f.screen,false); }
-      else if(f.screen==='sc-sponsors') renderSponsors();
+      let tgt=f.screen;
+      if(tgt==='sc-winner'){ const rk0=rankings(); if(!rk0.length||rk0[0].total<=0) tgt='sc-tab'; }
+      if(tgt&&tgt!==S.screen){ go(tgt,false); }
+      else if(tgt==='sc-sponsors') renderSponsors();
     }
     renderTab();
     pulling=false; return;
@@ -1223,6 +1225,10 @@ function applyAud(d){
   if(scr==='sc-tab') renderTab();
   if(scr==='sc-sponsors') renderSponsors();
   if(scr==='sc-grid') renderGrid();
+  if(scr==='sc-winner'){ const rk0=rankings();
+    if(!rk0.length || rk0[0].total<=0) scr='sc-tab';   // never crown on a 0-0 board
+  }
+  if(scr==='sc-tab') renderTab();
   if(scr==='sc-winner'){ const rk=rankings();
     if(rk.length){
       document.getElementById('wname').textContent=rk[0].name;
