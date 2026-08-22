@@ -1206,14 +1206,33 @@ function pushSecond(){
 }
 
 /* --- child side --- */
+let _audSig='';
 function applyAud(d){
+  // timer values are cheap — always accept them
+  timerLeft=d.timerLeft; timerMax=d.timerMax;
+
+  // only redraw when something meaningful actually changed (stops the flicker)
+  const sig=JSON.stringify([d.screen,d.cat,d.slot,d.revealed,d.spView,d.spIdx,
+                            d.teams,d.marks,d.used]);
+  if(sig===_audSig){
+    if(S.screen==='sc-question') updTimer();   // tick the number only
+    return;
+  }
+  _audSig=sig;
+
   S.teams=d.teams||S.teams; S.marks=d.marks||S.marks; S.used=d.used||S.used;
   if(d.cat&&d.cat!==S.cat) paintCat(d.cat);
   S.slot=(typeof d.slot==='number')?d.slot:-1;
+  const spChanged=(typeof d.spIdx==='number'&&d.spIdx!==spIdx)||(d.spView&&d.spView!==spView);
   if(typeof d.spIdx==='number') spIdx=d.spIdx;
   if(d.spView) spView=d.spView;
-  timerLeft=d.timerLeft; timerMax=d.timerMax;
-  const scr=d.screen||'sc-idle';
+
+  let scr=d.screen||'sc-idle';
+  if(scr==='sc-winner'){ const rk0=rankings(); if(!rk0.length||rk0[0].total<=0) scr='sc-tab'; }
+
+  const screenChanged=(S.screen!==scr);
+  if(screenChanged) go(scr,false);          // go() renders the screen it switches to
+
   if(scr==='sc-question'&&S.slot>=0&&BANKS[S.cat]&&BANKS[S.cat][S.slot]){
     const q=BANKS[S.cat][S.slot];
     document.getElementById('qnum').textContent='QUESTION '+(S.slot+1)+' · '+CAT_META[S.cat].ptsLbl.toUpperCase();
@@ -1223,12 +1242,12 @@ function applyAud(d){
     updTimer();
   }
   if(scr==='sc-tab') renderTab();
-  if(scr==='sc-sponsors') renderSponsors();
-  if(scr==='sc-grid') renderGrid();
-  if(scr==='sc-winner'){ const rk0=rankings();
-    if(!rk0.length || rk0[0].total<=0) scr='sc-tab';   // never crown on a 0-0 board
+  if(scr==='sc-grid'&&!screenChanged) renderGrid();
+  if(scr==='sc-sponsors'&&!screenChanged){
+    // grid is static — only repaint the spotlight when the sponsor actually changes
+    if(spView==='grid'){ if(spChanged) renderSponsors(); }
+    else { if(spChanged) renderSponsors(); }
   }
-  if(scr==='sc-tab') renderTab();
   if(scr==='sc-winner'){ const rk=rankings();
     if(rk.length){
       document.getElementById('wname').textContent=rk[0].name;
@@ -1238,7 +1257,6 @@ function applyAud(d){
         const c=document.createElement('div'); c.className='run-card';
         c.innerHTML='<div class="rp">'+lbl+'</div><div class="rn">'+esc(rk[i].name)+'</div><div class="rs">Score: '+rk[i].total+'</div>';
         row.appendChild(c); }); } }
-  if(S.screen!==scr) go(scr,false);
 }
 if(IS_CHILD){
   window.addEventListener('message',e=>{ const d=e.data; if(d&&d.type==='picpa2') applyAud(d); });
