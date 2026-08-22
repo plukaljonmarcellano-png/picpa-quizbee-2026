@@ -37,6 +37,37 @@ body.hudon .screen{height:calc(100vh - var(--hudh,46px));}
 .rnd-chip b{font-family:'Bebas Neue',sans-serif;letter-spacing:1.5px;font-size:16px;}
 .idle-meta{margin-top:16px;font-size:12px;color:rgba(255,255,255,.35);letter-spacing:1.5px;text-align:center;line-height:1.9;}
 
+/* MECHANICS */
+#sc-mech{align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 25%,#1a2e47,var(--navy) 72%);}
+.mec-wrap{width:min(1500px,92vw);display:flex;flex-direction:column;align-items:center;}
+.mec-kicker{font-size:clamp(10px,1.15vw,14px);font-weight:700;letter-spacing:4px;text-transform:uppercase;
+  color:rgba(255,255,255,.40);text-align:center;}
+.mec-head{display:flex;align-items:center;gap:clamp(12px,1.6vw,22px);margin-top:12px;}
+.mec-no{font-family:'Bebas Neue',sans-serif;font-size:clamp(30px,4vw,58px);line-height:1;
+  color:var(--navy);background:var(--gold);border-radius:14px;padding:6px clamp(14px,1.6vw,22px);
+  box-shadow:0 6px 22px rgba(201,162,39,.35);}
+.mec-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(30px,4.6vw,66px);letter-spacing:3px;
+  line-height:1.04;color:var(--gold);text-shadow:0 0 32px rgba(201,162,39,.28);}
+.mec-rule{width:min(760px,80%);height:2px;background:linear-gradient(90deg,transparent,rgba(201,162,39,.75),transparent);margin:clamp(14px,2vh,22px) 0;}
+.mec-list{list-style:none;display:flex;flex-direction:column;gap:clamp(10px,1.5vh,18px);width:100%;max-width:1240px;}
+.mec-list li{display:flex;gap:clamp(12px,1.4vw,18px);align-items:flex-start;
+  font-size:clamp(16px,1.95vw,31px);line-height:1.42;color:rgba(255,255,255,.92);font-weight:500;}
+.mec-list li::before{content:'';flex:none;width:clamp(9px,.95vw,13px);height:clamp(9px,.95vw,13px);
+  margin-top:clamp(6px,.75vw,11px);border-radius:3px;background:var(--gold);transform:rotate(45deg);opacity:.85;}
+.mec-list li b{color:var(--gold);font-weight:800;}
+.mec-list li .muted{color:rgba(255,255,255,.55);font-weight:500;}
+.mec-pts{display:flex;justify-content:center;gap:clamp(12px,2.4vw,34px);flex-wrap:wrap;width:100%;}
+.mec-pt{flex:1 1 190px;max-width:290px;text-align:center;border-radius:16px;padding:clamp(14px,2.2vh,24px) 12px;border:2px solid;}
+.mec-pt .rn{font-family:'Bebas Neue',sans-serif;font-size:clamp(20px,2.5vw,38px);letter-spacing:2px;line-height:1.1;}
+.mec-pt .rv{font-size:clamp(13px,1.5vw,23px);font-weight:700;color:rgba(255,255,255,.88);margin-top:5px;}
+.mec-pt .rq{font-size:clamp(10px,1.05vw,15px);font-weight:600;letter-spacing:1.6px;text-transform:uppercase;
+  color:rgba(255,255,255,.45);margin-top:7px;}
+.mec-dots{display:flex;gap:9px;justify-content:center;margin-top:clamp(16px,2.6vh,28px);}
+.mec-dots i{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.20);transition:all .2s;}
+.mec-dots i.on{background:var(--gold);width:30px;border-radius:6px;}
+.mec-foot{margin-top:10px;font-size:clamp(10px,1vw,13px);letter-spacing:2.4px;text-transform:uppercase;
+  color:rgba(255,255,255,.30);text-align:center;}
+
 /* organisation line under the PICPA mark */
 .idle-org{margin:-4px auto 4px;max-width:920px;text-align:center;
   font-size:clamp(11px,1.45vw,16px);font-weight:600;letter-spacing:2.2px;line-height:1.75;
@@ -530,6 +561,18 @@ table.rt tr.win td{background:#FFF2C2 !important;font-weight:800;}
   </div>
 </div>
 
+<!-- MECHANICS -->
+<div class="screen" id="sc-mech">
+  <div class="mec-wrap">
+    <div class="mec-kicker">Quiz Bee Mechanics</div>
+    <div class="mec-head"><div class="mec-no" id="mec-no">1</div><div class="mec-title" id="mec-title">Format</div></div>
+    <div class="mec-rule"></div>
+    <div id="mec-body"></div>
+    <div class="mec-dots" id="mec-dots"></div>
+    <div class="mec-foot" id="mec-foot">Page 1 of 6</div>
+  </div>
+</div>
+
 <!-- REVEAL -->
 <div class="rev-ov" id="rev-ov"><div class="rev-box correct" id="rev-box">
   <div class="rev-ic" id="rev-ic">✅</div><div class="rev-vd" id="rev-vd">CORRECT ANSWER</div><div class="rev-at" id="rev-at"></div>
@@ -550,6 +593,7 @@ table.rt tr.win td{background:#FFF2C2 !important;font-weight:800;}
       <span class="glabel">Display</span>
       <div class="seg" id="segScreen">
         <button class="sgb" data-s="sc-idle"     onclick="go('sc-idle')">Standby</button>
+        <button class="sgb" data-s="sc-mech"     onclick="go('sc-mech')">Mechanics</button>
         <button class="sgb" data-s="sc-grid"     onclick="go('sc-grid')">Quiz</button>
         <button class="sgb" data-s="sc-sponsors" onclick="go('sc-sponsors')">Sponsors</button>
         <button class="sgb" data-s="sc-tab"      onclick="go('sc-tab')">Standings</button>
@@ -602,6 +646,15 @@ table.rt tr.win td{background:#FFF2C2 !important;font-weight:800;}
       <button class="hb" id="b-spauto" onclick="toggleSpAuto()">▶ Auto-Play</button>
     </span>
 
+    <span class="cgrp" data-ctx="mech" id="mecctl">
+      <span class="vr"></span>
+      <span class="glabel">Mechanics</span>
+      <button class="hb" onclick="mecStep(-1)" title="Previous page (←)">‹ Prev</button>
+      <span class="modepill" id="mec-lbl">1 / 6</span>
+      <button class="hb primary" onclick="mecStep(1)" title="Next page (→)">Next ›</button>
+      <button class="hicon" onclick="mecFirst()" title="Back to page 1">↺</button>
+    </span>
+
     <span class="cgrp" data-ctx="second" id="s2ctl">
       <span class="vr"></span>
       <span class="glabel">Send to 2nd Screen</span>
@@ -611,6 +664,7 @@ table.rt tr.win td{background:#FFF2C2 !important;font-weight:800;}
         <button class="sgb s2b" data-t="sc-sponsors"    onclick="setSecond('sc-sponsors')">Sponsors</button>
         <button class="sgb s2b" data-t="sc-tab"         onclick="setSecond('sc-tab')">Standings</button>
         <button class="sgb s2b" data-t="sc-winner"      onclick="setSecond('sc-winner')">Champion</button>
+        <button class="sgb s2b" data-t="sc-mech"        onclick="setSecond('sc-mech')">Mechanics</button>
         <button class="sgb s2b" data-t="sc-idle"        onclick="setSecond('sc-idle')">Logo</button>
       </div>
       <button class="hb" onclick="sendToProjector()" title="Move the 2nd screen onto the projector / external display and go full screen">⛶ To Projector</button>
@@ -797,6 +851,7 @@ function go(id,push=true){
   S.screen=id;
   if(id!=='sc-sponsors' && !(audWin && !audWin.closed && (audTarget==='sc-sponsors'||audTarget==='mirror'&&id==='sc-sponsors'))) stopSpAuto();
   if(id==='sc-sponsors'){ renderSponsors(); }
+  if(id==='sc-mech'){ renderMech(); }
   if(id==='sc-tab'){ renderTab(); }
   if(id==='sc-winner'){ startConfetti(); }
   if(push) sync();
@@ -946,6 +1001,77 @@ function flow(step){
   d('b-reset',step==='grid'); d('b-reveal',step==='grid'||step==='revealed');
   d('b-next',step!=='revealed');
 }
+
+/* ═══ MECHANICS (quizmaster reads these aloud) ═══ */
+let mecIdx=0;
+function qCount(c){ return (BANKS[c]||[]).length; }
+const MECH=[
+ {n:1,t:'Format',rows:()=>[
+   'The Quiz Bee is played in three rounds — <b>Easy</b>, <b>Average</b> and <b>Difficult</b> — followed by a <b>Clincher</b> round if needed.',
+   'Easy '+qCount('easy')+' questions &nbsp;·&nbsp; Average '+qCount('average')+' &nbsp;·&nbsp; Difficult '+qCount('difficult')+' &nbsp;·&nbsp; Clincher up to '+qCount('clincher')+'.',
+   'All questions are <b>short answer</b>. Each team writes its answer on the whiteboard provided.',
+   'Each team designates <b>one spokesperson</b> to present the final answer.',
+   '<span class="muted">Subjects: Mathematics · Science · History · Literature · General Knowledge</span>']},
+
+ {n:2,t:'Scoring',pts:true,rows:()=>[
+   '<b>No points are deducted</b> for a wrong answer.',
+   'There is <b>no elimination</b> — every team plays every round.',
+   'A team&rsquo;s total is the sum of its points across all three rounds.']},
+
+ {n:3,t:'Time Limit',rows:()=>[
+   'Teams have <b>10 seconds</b> to discuss and write their answer.',
+   'Questions marked <b>&sum; COMPUTATION</b> are given <b>30 seconds</b>.',
+   'The countdown is shown on screen, with a <b>buzzer</b> when time expires.',
+   'An answer not presented within the time limit is <b>marked incorrect</b>.']},
+
+ {n:4,t:'Answering Procedure',rows:()=>[
+   'The quizmaster reads each question <b>twice</b>.',
+   'Teams may begin writing once the question is read the <b>first time</b>.',
+   'The countdown starts <b>after the second reading</b> is finished.',
+   'On &ldquo;time&rsquo;s up&rdquo;, spokespersons <b>raise their whiteboards together</b>.',
+   'Answers must be <b>legible and clear</b>. The quizmaster announces which teams are correct.']},
+
+ {n:5,t:'Tiebreaker &amp; Judges',rows:()=>[
+   'A tie is settled by a <b>sudden-death Clincher</b> round.',
+   'Clincher questions increase in difficulty; the <b>first team to answer correctly wins</b>.',
+   'If no team answers correctly, further questions are asked until a winner emerges.',
+   'A <b>panel of judges</b> — teachers and subject-matter experts — oversees the contest.',
+   'Disputes must be raised <b>immediately after the round</b>. All decisions of the judges are <b>final</b>.']},
+
+ {n:6,t:'Conduct &amp; Awards',rows:()=>[
+   'Proper decorum is expected at all times. <b>Cheating or misconduct means disqualification</b>.',
+   'The audience is asked to <b>support respectfully</b> and avoid coaching or disturbances.',
+   '<b>1st, 2nd and 3rd place</b> receive medals, certificates and a cash prize.',
+   'Every participant receives a <b>Certificate of Participation</b>.']},
+];
+function renderMech(){
+  const p=MECH[mecIdx]; if(!p)return;
+  document.getElementById('mec-no').textContent=p.n;
+  document.getElementById('mec-title').innerHTML=p.t;
+  let h='';
+  if(p.pts){
+    h+='<div class="mec-pts">';
+    [['easy','Easy'],['average','Average'],['difficult','Difficult']].forEach(([c,l])=>{
+      const m=CAT_META[c];
+      h+='<div class="mec-pt" style="border-color:'+m.border+';background:'+m.bg+'">'+
+         '<div class="rn" style="color:'+m.color+'">'+l.toUpperCase()+'</div>'+
+         '<div class="rv">'+m.ptsLbl+'</div>'+
+         '<div class="rq">'+qCount(c)+' questions</div></div>';
+    });
+    h+='</div><div style="height:clamp(14px,2.4vh,26px)"></div>';
+  }
+  h+='<ul class="mec-list">'+p.rows().map(r=>'<li><span>'+r+'</span></li>').join('')+'</ul>';
+  document.getElementById('mec-body').innerHTML=h;
+  document.getElementById('mec-dots').innerHTML=MECH.map((_,i)=>'<i class="'+(i===mecIdx?'on':'')+'"></i>').join('');
+  document.getElementById('mec-foot').textContent='Page '+(mecIdx+1)+' of '+MECH.length+'  ·  use ← →';
+  const lbl=document.getElementById('mec-lbl');
+  if(lbl) lbl.textContent=(mecIdx+1)+' / '+MECH.length;
+}
+function mecStep(d){
+  mecIdx=(mecIdx+d+MECH.length)%MECH.length;
+  renderMech(); sync();
+}
+function mecFirst(){ mecIdx=0; renderMech(); sync(); }
 
 /* ═══ SPONSORS ═══ */
 let spView='grid', spIdx=0, spTimer=null, spAuto=false;
@@ -1178,7 +1304,7 @@ async function rowPull(id){
   }catch(e){ setDot('err'); return null; }
 }
 function pushFlow(){ if(MODE!=='cc')return;
-  rowPush('flow',{cat:S.cat,slot:S.slot,used:S.used,screen:S.screen,rev:S.rev,spView,spIdx,ts:Date.now()}); }
+  rowPush('flow',{cat:S.cat,slot:S.slot,used:S.used,screen:S.screen,rev:S.rev,spView,spIdx,mecIdx,ts:Date.now()}); }
 function pushTeams(){ rowPush('teams',{teams:S.teams,ts:Date.now()}); }
 function sync(){ pushSecond(); clearTimeout(pushT); pushT=setTimeout(pushFlow,350); }
 
@@ -1195,11 +1321,13 @@ async function cloudPull(){
       if(f.cat&&f.cat!==S.cat) paintCat(f.cat);
       S.slot=(typeof f.slot==='number')?f.slot:-1;
       if(typeof f.spIdx==='number') spIdx=f.spIdx;
+      if(typeof f.mecIdx==='number'&&f.mecIdx!==mecIdx){ mecIdx=f.mecIdx; if(S.screen==='sc-mech') renderMech(); }
       if(f.spView&&f.spView!==spView) spView=f.spView;
       let tgt=f.screen;
       if(tgt==='sc-winner'){ const rk0=rankings(); if(!rk0.length||rk0[0].total<=0) tgt='sc-tab'; }
       if(tgt&&tgt!==S.screen){ go(tgt,false); }
       else if(tgt==='sc-sponsors') renderSponsors();
+      else if(tgt==='sc-mech') renderMech();
     }
     renderTab();
     pulling=false; return;
@@ -1227,10 +1355,11 @@ function cloudPush(){ pushFlow(); pushTeams(); }
 /* ═══ CONTEXTUAL CONSOLE ═══ */
 function hudCtx(){
   const scr=S.screen;
-  const show={round:false,question:false,sponsors:false,second:false};
+  const show={round:false,question:false,sponsors:false,second:false,mech:false};
   if(scr==='sc-grid'||scr==='sc-question') show.round=true;
   if(scr==='sc-question') show.question=true;
   if(scr==='sc-sponsors') show.sponsors=true;
+  if(scr==='sc-mech') show.mech=true;
   if(audWin&&!audWin.closed) show.second=true;
   document.querySelectorAll('.cgrp').forEach(g=>g.classList.toggle('show',!!show[g.dataset.ctx]));
   document.querySelectorAll('#segScreen .sgb').forEach(b=>b.classList.toggle('on',b.dataset.s===scr));
@@ -1320,7 +1449,7 @@ function audPayload(){
   return {type:'picpa2', teams:S.teams, marks:S.marks, used:S.used, cat:S.cat, slot:S.slot,
           screen:(audTarget==='mirror'? S.screen : audTarget),
           revealed:revealed, spView:spView, spIdx:spIdx,
-          timerLeft:timerLeft, timerMax:timerMax, snd:soundOn};
+          timerLeft:timerLeft, timerMax:timerMax, snd:soundOn, mecIdx:mecIdx};
 }
 function pushSecond(){
   if(!audWin||audWin.closed)return;
@@ -1359,7 +1488,7 @@ function applyAud(d){
   timerLeft=d.timerLeft; timerMax=d.timerMax;
 
   // only redraw when something meaningful actually changed (stops the flicker)
-  const sig=JSON.stringify([d.screen,d.cat,d.slot,d.revealed,d.spView,d.spIdx,
+  const sig=JSON.stringify([d.screen,d.cat,d.slot,d.revealed,d.spView,d.spIdx,d.mecIdx,
                             d.teams,d.marks,d.used]);
   if(sig===_audSig){
     if(S.screen==='sc-question') updTimer();   // tick the number only
@@ -1370,6 +1499,8 @@ function applyAud(d){
   S.teams=d.teams||S.teams; S.marks=d.marks||S.marks; S.used=d.used||S.used;
   if(d.cat&&d.cat!==S.cat) paintCat(d.cat);
   S.slot=(typeof d.slot==='number')?d.slot:-1;
+  const mecChanged=(typeof d.mecIdx==='number'&&d.mecIdx!==mecIdx);
+  if(typeof d.mecIdx==='number') mecIdx=d.mecIdx;
   const spChanged=(typeof d.spIdx==='number'&&d.spIdx!==spIdx)||(d.spView&&d.spView!==spView);
   if(typeof d.spIdx==='number') spIdx=d.spIdx;
   if(d.spView) spView=d.spView;
@@ -1390,6 +1521,7 @@ function applyAud(d){
   }
   if(scr==='sc-tab') renderTab();
   if(scr==='sc-grid'&&!screenChanged) renderGrid();
+  if(scr==='sc-mech'&&!screenChanged&&mecChanged) renderMech();
   if(scr==='sc-sponsors'&&!screenChanged){
     // grid is static — only repaint the spotlight when the sponsor actually changes
     if(spView==='grid'){ if(spChanged) renderSponsors(); }
@@ -1638,6 +1770,9 @@ document.addEventListener('keydown',e=>{
     case 'p': case 'P': go('sc-sponsors'); break;
     case 'q': case 'Q': go('sc-grid'); break;
     case 'o': case 'O': if(S.screen==='sc-sponsors') toggleSpot(); break;
+    case 'k': case 'K': go('sc-mech'); break;
+    case 'ArrowRight': if(S.screen==='sc-mech'){ e.preventDefault(); mecStep(1); } break;
+    case 'ArrowLeft':  if(S.screen==='sc-mech'){ e.preventDefault(); mecStep(-1); } break;
     case 'm': case 'M': switchMode(); break;
     case '1': setCat('easy'); break;
     case '2': setCat('average'); break;
