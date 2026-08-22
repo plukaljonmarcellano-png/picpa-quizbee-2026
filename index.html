@@ -358,6 +358,15 @@ table.rt tr.win td{background:#FFF2C2 !important;font-weight:800;}
 .mb-g{background:transparent;color:rgba(255,255,255,.5);border-color:rgba(255,255,255,.17);}
 .note{font-size:11px;color:rgba(255,255,255,.4);line-height:1.6;margin-bottom:10px;}
 .linkbox{background:var(--navy3);border:1.5px solid rgba(201,162,39,.25);border-radius:8px;padding:10px;font-size:11px;word-break:break-all;color:var(--gold2);margin-bottom:8px;}
+/* ── 2nd-screen audio unlock pill ── */
+#sndlock{position:fixed;left:18px;bottom:18px;display:none;align-items:center;gap:9px;
+  background:rgba(192,57,43,.94);border:1px solid rgba(255,255,255,.35);color:#fff;
+  padding:10px 16px;border-radius:999px;font-size:14px;font-weight:800;letter-spacing:.3px;
+  box-shadow:0 8px 26px rgba(0,0,0,.5);z-index:9998;cursor:pointer;
+  animation:sndpulse 1.8s ease-in-out infinite}
+#sndlock.show{display:flex}
+@keyframes sndpulse{0%,100%{opacity:.85}50%{opacity:1}}
+
 /* ── toast ── */
 #toast{position:fixed;left:50%;bottom:86px;transform:translateX(-50%) translateY(14px);
   background:rgba(10,16,28,.96);border:1px solid rgba(212,175,55,.55);color:#f2e6c4;
@@ -573,6 +582,7 @@ table.rt tr.win td{background:#FFF2C2 !important;font-weight:800;}
         <button class="sgb s2b" data-t="sc-idle"        onclick="setSecond('sc-idle')">Logo</button>
       </div>
       <button class="hb" onclick="sendToProjector()" title="Move the 2nd screen onto the projector / external display and go full screen">⛶ To Projector</button>
+      <button class="hb" id="b-ccaud" onclick="toggleCcAudio()" title="Also play the tick and buzzer on this laptop (off = only the 2nd screen makes sound)">🔈 CC Audio: Off</button>
       <button class="hicon" onclick="closeSecond()" title="Close 2nd screen">✕</button>
     </span>
 
@@ -689,13 +699,17 @@ let soundOn=true,hudVis=true,spotIdx=0,spotTimer=null,prevPos={};
 /* ═══ AUDIO ═══ */
 let _ac=null;
 function AC(){ if(!_ac){try{_ac=new (window.AudioContext||window.webkitAudioContext)();}catch(e){_ac=null;}} return _ac; }
-function playTick(s){ if(!soundOn)return; const a=AC(); if(!a)return; if(a.state==='suspended')a.resume();
+/* When the 2nd screen is live it carries the room audio; keep the operator's
+   laptop quiet by default so the hall doesn't hear a doubled, out-of-sync tick. */
+let ccAudio=false;
+function audMuted(){ return !IS_CHILD && audWin && !audWin.closed && !ccAudio; }
+function playTick(s){ if(!soundOn||audMuted())return; const a=AC(); if(!a)return; if(a.state==='suspended')a.resume();
   const t=a.currentTime,u=s<=5,o=a.createOscillator(),g=a.createGain();
   o.type=u?'square':'sine'; o.frequency.value=u?950:1500;
   const v=u?.30:.10,d=u?.13:.05;
   g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(v,t+.005); g.gain.exponentialRampToValueAtTime(.0001,t+d);
   o.connect(g); g.connect(a.destination); o.start(t); o.stop(t+d+.02); }
-function playBuzzer(){ if(!soundOn)return; const a=AC(); if(!a)return; if(a.state==='suspended')a.resume();
+function playBuzzer(){ if(!soundOn||audMuted())return; const a=AC(); if(!a)return; if(a.state==='suspended')a.resume();
   const t=a.currentTime;
   [[0,180],[.28,150],[.56,120]].forEach(([off,f])=>{
     const o1=a.createOscillator(),o2=a.createOscillator(),g=a.createGain();
@@ -706,7 +720,20 @@ function playBuzzer(){ if(!soundOn)return; const a=AC(); if(!a)return; if(a.stat
     o1.start(t+off);o2.start(t+off);o1.stop(t+off+.27);o2.stop(t+off+.27); }); }
 function toggleSound(){ soundOn=!soundOn; const b=document.getElementById('b-sound');
   b.textContent=soundOn?'🔊 Sound':'🔇 Muted'; b.classList.toggle('green',soundOn);
-  if(soundOn){const a=AC(); if(a&&a.state==='suspended')a.resume();} }
+  if(soundOn){const a=AC(); if(a&&a.state==='suspended')a.resume();}
+  if(!IS_CHILD) pushSecond();          /* mute/unmute the 2nd screen too */ }
+
+/* Browsers start a pop-up window's audio suspended until someone interacts with
+   that window. Show a pill on the 2nd screen until one click unlocks it. */
+function unlockAudio(){
+  const a=AC(); if(!a){ audioPill(); return; }
+  if(a.state!=='running'){ try{ a.resume().then(audioPill).catch(audioPill); }catch(e){ audioPill(); } }
+  else audioPill();
+}
+function audioPill(){
+  const p=document.getElementById('sndlock'); if(!p)return;
+  p.classList.toggle('show', IS_CHILD && !(_ac && _ac.state==='running'));
+}
 
 /* ═══ SCORING ═══ */
 function roundScore(r,ti){ let n=0; const m=S.marks[r]||{};
@@ -1213,6 +1240,12 @@ async function placeSecond(fs){
   try{ audWin.focus(); }catch(e){}
   return !!sc;
 }
+function toggleCcAudio(){
+  ccAudio=!ccAudio;
+  const b=document.getElementById('b-ccaud');
+  if(b){ b.textContent=ccAudio?'🔈 CC Audio: On':'🔈 CC Audio: Off'; b.classList.toggle('green',ccAudio); }
+  if(ccAudio){ const a=AC(); if(a&&a.state==='suspended')a.resume(); playTick(9); }
+}
 function sendToProjector(){
   if(!audWin||audWin.closed){
     openSecond(true);
@@ -1251,7 +1284,7 @@ function audPayload(){
   return {type:'picpa2', teams:S.teams, marks:S.marks, used:S.used, cat:S.cat, slot:S.slot,
           screen:(audTarget==='mirror'? S.screen : audTarget),
           revealed:revealed, spView:spView, spIdx:spIdx,
-          timerLeft:timerLeft, timerMax:timerMax};
+          timerLeft:timerLeft, timerMax:timerMax, snd:soundOn};
 }
 function pushSecond(){
   if(!audWin||audWin.closed)return;
@@ -1259,8 +1292,33 @@ function pushSecond(){
 }
 
 /* --- child side --- */
-let _audSig='';
+let _audSig='', _lastTL=null;
+
+/* The countdown runs in the Command Center; the 2nd screen only receives the
+   number. Derive the tick / buzzer here so the audience hears them too. */
+function audSound(d){
+  if(typeof d.snd==='boolean') soundOn=d.snd;
+  const tl=d.timerLeft;
+  if(typeof tl!=='number'){ _lastTL=null; return; }
+  const prev=_lastTL; _lastTL=tl;
+  if(prev===null || tl>=prev) return;              // reset / no change → silent
+  if(d.screen!=='sc-question') return;             // only during a live question
+  if(tl>0){ playTick(tl); }
+  else { playBuzzer(); childTimeUp(); }
+}
+function childTimeUp(){
+  const ov=document.getElementById('rev-ov'), b=document.getElementById('rev-box');
+  if(!ov||!b)return;
+  b.className='rev-box timeup';
+  document.getElementById('rev-ic').textContent='⏰';
+  document.getElementById('rev-vd').textContent="TIME'S UP!";
+  document.getElementById('rev-at').textContent='';
+  ov.classList.add('show');
+  setTimeout(()=>ov.classList.remove('show'),2500);
+}
+
 function applyAud(d){
+  audSound(d);
   // timer values are cheap — always accept them
   timerLeft=d.timerLeft; timerMax=d.timerMax;
 
@@ -1319,6 +1377,9 @@ if(IS_CHILD){
     if(!document.fullscreenElement) document.documentElement.requestFullscreen();
     else document.exitFullscreen();
   }catch(e){} });
+  /* any interaction unlocks this window's audio */
+  ['pointerdown','keydown','dblclick'].forEach(ev=>document.addEventListener(ev,unlockAudio,true));
+  window.addEventListener('load',()=>{ AC(); unlockAudio(); setInterval(audioPill,1500); });
 }
 window.addEventListener('message',e=>{ if(e.data&&e.data.type==='picpa2ready') pushSecond(); });
 
@@ -1581,5 +1642,6 @@ if(IS_CHILD){
 measHud(); setTimeout(measHud,300);
 </script>
 <div id="toast"></div>
+<div id="sndlock" onclick="unlockAudio()">🔇 Click anywhere to turn on sound</div>
 </body>
 </html>
