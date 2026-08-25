@@ -286,6 +286,10 @@ body.hudon .screen{height:calc(100vh - var(--hudh,46px));}
 .spot-ic{font-size:60px;filter:drop-shadow(0 0 22px rgba(201,162,39,.45));}
 .spot-sal{font-size:clamp(15px,1.8vw,21px);font-weight:700;letter-spacing:5px;color:var(--gold);text-transform:uppercase;}
 .spot-nm{font-family:'Cormorant Garamond',Georgia,serif;font-weight:700;font-size:clamp(44px,8vw,110px);color:#fff;line-height:1.05;text-shadow:0 0 60px rgba(201,162,39,.4);}
+.spot-org{font-size:clamp(13px,1.55vw,25px);font-weight:600;letter-spacing:2.4px;text-transform:uppercase;
+  color:rgba(255,255,255,.62);margin-top:10px;max-width:80vw;line-height:1.35;}
+.sp-card .org{font-size:clamp(9px,.85vw,12px);font-weight:600;letter-spacing:1.4px;text-transform:uppercase;
+  color:rgba(255,255,255,.45);margin-top:6px;line-height:1.35;}
 .spot-ct{font-size:12px;letter-spacing:2px;color:rgba(255,255,255,.35);margin-top:14px;}
 .fadein{animation:fi .7s ease both;}
 @keyframes fi{from{opacity:0;transform:scale(.94);}to{opacity:1;transform:scale(1);}}
@@ -444,6 +448,21 @@ table.rt tr.win td{background:#FFF2C2 !important;font-weight:800;}
 .qed-del{background:none;border:none;color:rgba(255,255,255,.30);font-size:17px;cursor:pointer;padding-top:8px;}
 .qed-del:hover{color:var(--clin);}
 .qed-used{grid-column:2/6;font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--diff);}
+.sed-head,.sed-row{display:grid;grid-template-columns:32px 92px 1fr 1fr 62px 34px;gap:9px;align-items:center;}
+.sed-head{font-size:10px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;
+  color:rgba(255,255,255,.38);padding:0 4px 7px;border-bottom:1px solid rgba(255,255,255,.09);}
+.sed-head span:nth-child(5),.sed-head span:nth-child(6){text-align:center;}
+#sed-list{max-height:46vh;overflow-y:auto;padding-top:9px;}
+.sed-row{padding:5px 4px;border-radius:8px;}
+.sed-row:hover{background:rgba(255,255,255,.03);}
+.sed-row input{width:100%;background:var(--navy3);border:1px solid rgba(255,255,255,.14);
+  border-radius:8px;color:#fff;font-size:13px;font-family:inherit;padding:9px 11px;}
+.sed-row input:focus{outline:none;border-color:var(--gold);}
+.sed-ord{display:flex;gap:3px;justify-content:center;}
+.sed-ord button{background:var(--navy3);border:1px solid rgba(255,255,255,.14);border-radius:6px;
+  color:rgba(255,255,255,.60);font-size:11px;width:26px;height:26px;cursor:pointer;}
+.sed-ord button:hover:not(:disabled){border-color:var(--gold);color:var(--gold);}
+.sed-ord button:disabled{opacity:.25;cursor:default;}
 .tmr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:13px;margin:16px 0;}
 .tmr-c{background:var(--navy3);border:2px solid;border-radius:13px;padding:15px 14px;text-align:center;}
 .tmr-c .tl{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.6px;}
@@ -543,12 +562,9 @@ table.rt tr.win td{background:#FFF2C2 !important;font-weight:800;}
       <div class="spot-ic">🏅</div>
       <div class="spot-sal" id="spot-sal">MR.</div>
       <div class="spot-nm" id="spot-nm">—</div>
+      <div class="spot-org" id="spot-org"></div>
       <div class="spot-ct" id="spot-ct"></div>
     </div>
-      <div class="sp-spot" id="sp-spot">
-        <div class="ic">🏅</div><div class="sal" id="spot-sal">MR.</div>
-        <div class="nm" id="spot-name">—</div><div class="ct" id="spot-ct"></div>
-      </div>
     </div>
     <div class="sp-foot"><div class="sp-thanks">★ &nbsp; THANK YOU FOR YOUR GENEROUS SUPPORT &nbsp; ★</div></div>
   </div>
@@ -785,6 +801,7 @@ table.rt tr.win td{background:#FFF2C2 !important;font-weight:800;}
   <h3>⚙ Settings — Questions &amp; Timers</h3>
   <div class="cfg-tabs">
     <button class="cfg-tab on" data-tab="q" onclick="cfgTab('q')">📝 Questions</button>
+    <button class="cfg-tab"    data-tab="s" onclick="cfgTab('s')">🏅 Sponsors</button>
     <button class="cfg-tab"    data-tab="t" onclick="cfgTab('t')">⏱ Timers</button>
     <button class="cfg-tab"    data-tab="b" onclick="cfgTab('b')">💾 Backup</button>
   </div>
@@ -797,6 +814,16 @@ table.rt tr.win td{background:#FFF2C2 !important;font-weight:800;}
     <div class="ma" style="justify-content:flex-start;margin-top:12px;">
       <button class="mbtn mb-g" onclick="qAdd()">＋ Add question</button>
       <span class="note" style="margin:0;align-self:center;" id="qed-count"></span>
+    </div>
+  </div>
+
+  <div class="cfg-pane" id="cfgp-s">
+    <div class="note">These names appear on the Sponsors screen — both the full grid and the one-at-a-time spotlight. <b>Organization</b> is optional: fill it in for sponsors representing a company or group, leave it blank for individuals. Use ↑ ↓ to set the order the spotlight cycles through.</div>
+    <div class="sed-head"><span>#</span><span>Title</span><span>Name</span><span>Organization represented</span><span>Order</span><span></span></div>
+    <div id="sed-list"></div>
+    <div class="ma" style="justify-content:flex-start;margin-top:12px;">
+      <button class="mbtn mb-g" onclick="spAdd()">＋ Add sponsor</button>
+      <span class="note" style="margin:0;align-self:center;" id="sed-count"></span>
     </div>
   </div>
 
@@ -849,7 +876,8 @@ const LOGO_PISTA='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPMAAACWCAMAAAA8
 const SUPA_URL='https://cpumktocfhbnzocyztlb.supabase.co', SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwdW1rdG9jZmhibnpvY3l6dGxiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwOTA1OTUsImV4cCI6MjEwMjY2NjU5NX0.4svrpxWcQda9BRVMM-MaxLg1xcsigTnVJq_2EZlgzNw', ROOM='main';
 const BANKS_BUILTIN={"easy": [{"q": "In which stage of the cell cycle does a eukaryotic cell spend most of its time carrying out normal functions and preparing for division?", "ans": "Interphase"}, {"q": "What is the term for a narrow strip of land connecting two larger landmasses?", "ans": "Isthmus"}, {"q": "Which body system, made up of the skin along with hair, nails, and sweat glands, plays a key role in maintaining homeostasis?", "ans": "Integumentary system"}, {"q": "Find the area of a parallelogram whose side lengths are 8 units and 15 units.", "ans": "120 square units", "calc": true}, {"q": "Which Roman leader sparked a civil war and the eventual fall of the Republic when he marched his army across the Rubicon River into Italy?", "ans": "Julius Caesar"}, {"q": "What art style, characterized by distorted and exaggerated depictions, is often associated with artists like Pablo Picasso?", "ans": "Cubism"}, {"q": "What was the name of the first major historical Thai kingdom, founded in the 13th century, famous for the rule of King Ramkhamhaeng?", "ans": "Sukhothai"}, {"q": "In trigonometry, what is the cosecant of an angle equal to?", "ans": "The reciprocal of the sine"}, {"q": "Statement 1: A group of flamingos are called flocks.  Statement 2: Octopuses have three hearts.  Statement 3: Sharks are the only fish that can blink.  Statement 4: A snail can sleep for up to three years.  Which statement(s) is/are TRUE?", "ans": "Statements 2, 3, and 4 only"}, {"q": "In current events, which emerging international framework has recently drawn attention in the Philippines for its role in developing secure semiconductor supply chains, critical-mineral processing, and new industrial zones such as the proposed Economic Security Zone in New Clark City?", "ans": "Pax Silica"}], "average": [{"q": "In which country did the massive July 31, 2012 blackout occur, affecting about 670 million people—roughly ten percent of the world’s population?", "ans": "India"}, {"q": "Sometimes called “The Road to Mandalay” after a Rudyard Kipling poem, what river extends about 1,350 miles through the centre of Burma, also known as Myanmar?", "ans": "The Irrawaddy River"}, {"q": "Following the Bolshevik seizure of power in October 1917, what building near Moscow’s Red Square became the headquarters of Vladimir Lenin’s Soviet government?", "ans": "The Kremlin"}, {"q": "An instrument store gives a 10% discount off the original cost of an instrument to all students. During a back-to-school sale, an additional 15% is taken off the discounted price. Julie, a student at the local high school, purchases a flute for SAR 306. How much did it originally cost?", "ans": "SAR 400", "calc": true}, {"q": "In chemistry, what law states that the total pressure exerted by a mixture of gases is equal to the sum of the partial pressures of the individual gases?", "ans": "Dalton’s Law of Partial Pressures"}, {"q": "Who was the religious scholar and judge from Johore credited with founding the Sultanate of Sulu around the mid-15th century?", "ans": "Sharif ul-Hashim (Paduka Mahasari Maulana al Sultan Sharif ul-Hashim)"}, {"q": "What mechanical and electronic device has a name derived from a Czechoslovakian word meaning “work; compulsory service”?", "ans": "Robot"}, {"q": "In Homer’s Odyssey, Odysseus orders his crew to tie him to the mast so he can safely listen to the deadly, enchanting song of which mythical creatures known for luring sailors to their death?", "ans": "Sirens"}, {"q": "Literally meaning “wind-water”, what ancient Chinese system of spatial arrangement is said to promote the flow of good energy in a room?", "ans": "Feng Shui"}, {"q": "A 10-kilogram mass rests on a horizontal frictionless surface. A horizontal force of 5 Newtons is applied to the mass. After the force has been applied for 1 second, calculate the velocity of the mass.", "ans": "0.5 metres per second", "calc": true}], "difficult": [{"q": "The Austro-Hungarian Empire was controlled by what German dynasty founded in the 11th century?", "ans": "The Habsburgs"}, {"q": "In Bohr’s theory of the atom, what force was responsible for holding the electrons in their orbit?", "ans": "Coulomb force (the force of attraction between the proton/nucleus and the electron)"}, {"q": "In Philippine literature, which satirical piece by Marcelo H. del Pilar was written in 1888 as a humorous rebuttal to Fr. José Rodriguez’s attack on Jose Rizal’s Noli Me Tangere?", "ans": "Kaiingat Kayo / Caiingat Cayo"}, {"q": "Which famous 15th-to-16th-century ruler, known as the “Singing Captain” (Nakhoda Ragam), greatly expanded Brunei’s territorial influence across Borneo and parts of the Philippines?", "ans": "Sultan Bolkiah"}, {"q": "In the field of physics, what is the term for the phenomenon where a wave encounters an obstacle and bends around it, leading to the spreading of the wave beyond the obstacle’s shadow?", "ans": "Diffraction"}, {"q": "Two bodies are moving in circular paths of equal radii. If the speed of the first body is twice that of the second, the centripetal acceleration of the first body is how many times greater than that of the second body?", "ans": "Four times", "calc": true}, {"q": "Known as the Father of Humanism and sometimes the Father of the Renaissance, what 14th-century Italian poet celebrated Rome in his “Letters to the Ancient Dead”?", "ans": "Petrarch"}, {"q": "What Italian scientist is known for his namesake law, which states that equal volumes of gases under the same conditions of temperature and pressure contain an equal number of molecules?", "ans": "Amedeo Avogadro"}, {"q": "Which early 20th-century Filipino short story, written by Paz Márquez-Benítez, is celebrated for introducing modern narrative techniques into Philippine literature?", "ans": "Dead Stars (by Paz Marquez Benitez)"}, {"q": "A tech company models the depreciation of a machine using D(t) = -2t³ + 9t² - 12t + 7, where t is the number of years after purchase. The model evaluates the depreciation at t = 3. What value does the model produce?", "ans": "-2", "calc": true}], "clincher": [{"q": "What major archaeological discovery in 1799 allowed scholars like Jean-François Champollion to finally decode ancient Egyptian hieroglyphics?", "ans": "The Rosetta Stone"}, {"q": "Which son of Cronus was secretly protected by his mother and therefore not swallowed, despite a prophecy that Cronus would be overthrown by one of his children?", "ans": "Zeus"}, {"q": "Who proposed the theory of natural selection before Charles Darwin?", "ans": "Alfred Russel Wallace"}, {"q": "What is the name of the temperature and pressure conditions at which water can be in the solid, liquid, and gas phases simultaneously?", "ans": "Triple point of water"}, {"q": "The Treaty of Kadesh is the earliest known peace treaty in history. Known as “the Great”, what pharaoh agreed to end Egypt’s long war with the Hittites?", "ans": "Ramesses the Great"}, {"q": "What country, whose name is derived from the Portuguese for “Lion Mountains”, has a capital of Freetown?", "ans": "Sierra Leone"}, {"q": "A charged particle is moving in a UNIFORM magnetic field. If the direction of motion of the charged particle is parallel to the magnetic field, describe the shape of the charged particle’s path.", "ans": "A straight line"}, {"q": "Find the missing term in the following sequence:  4, 9, 19, ____, 79, 159", "ans": "39", "calc": true}, {"q": "I. If two triangles have the same perimeter, they must have the same area.  II. If two squares have the same perimeter, they must have the same area.  Which statement(s) is/are FALSE?", "ans": "Statement I only"}, {"q": "What nine-letter word refers to what happens when a star runs out of fuel for nuclear fusion and dies in a spectacular explosion?", "ans": "Supernova"}, {"q": "Also known as M dwarfs, what colour dwarf stars are the longest-lived and the most common in the universe?", "ans": "Red dwarfs"}, {"q": "Which figure in Greek mythology dons Achilles’ armour and scares the Trojans back from their advance, leading to his death?", "ans": "Patroclus"}, {"q": "What three-letter term is the standard international unit of electrical resistance?", "ans": "Ohm"}, {"q": "What literary movement does Franz Kafka’s work, particularly “The Metamorphosis,” align with?", "ans": "Existentialism"}, {"q": "What is the name of the process by which sedimentary rocks are formed through the compression and cementation of sediments?", "ans": "Lithification"}]};
 let BANKS=JSON.parse(JSON.stringify(BANKS_BUILTIN));
-const SPONSORS=[{"sal": "MR.", "name": "NASH GUMIRAN"}, {"sal": "MR.", "name": "ERWIN BOLANTE"}, {"sal": "DRA.", "name": "MINERVA SANTOS"}, {"sal": "MR.", "name": "EFTY TAYO"}, {"sal": "MR.", "name": "NOEL ARNIHO"}, {"sal": "MR.", "name": "ROY RIVERA"}, {"sal": "MR.", "name": "ROMMEL PINO"}, {"sal": "MR.", "name": "JOEY VILLANUEVA"}, {"sal": "MR.", "name": "CHOY LEE"}, {"sal": "MR.", "name": "JOSEFF SANTIAGO"}, {"sal": "CHEF", "name": "GOLA"}, {"sal": "MR.", "name": "JESSIE ALMARIO YASTRO (YASTRIX)"}, {"sal": "MR.", "name": "VIC RACHO"}, {"sal": "MR.", "name": "GANI MATEOS"}, {"sal": "MR.", "name": "RAFFY ABISAMIS"}];
+const SPONSORS_BUILTIN=[{"sal": "MR.", "name": "NASH GUMIRAN", "org": ""}, {"sal": "MR.", "name": "ERWIN BOLANTE", "org": ""}, {"sal": "DRA.", "name": "MINERVA SANTOS", "org": ""}, {"sal": "MR.", "name": "EFTY TAYO", "org": ""}, {"sal": "MR.", "name": "NOEL ARNIHO", "org": ""}, {"sal": "MR.", "name": "ROY RIVERA", "org": ""}, {"sal": "MR.", "name": "ROMMEL PINO", "org": ""}, {"sal": "MR.", "name": "JOEY VILLANUEVA", "org": ""}, {"sal": "MR.", "name": "CHOY LEE", "org": ""}, {"sal": "MR.", "name": "JOSEFF SANTIAGO", "org": ""}, {"sal": "CHEF", "name": "GOLA", "org": ""}, {"sal": "MR.", "name": "JESSIE ALMARIO YASTRO (YASTRIX)", "org": ""}, {"sal": "MR.", "name": "VIC RACHO", "org": ""}, {"sal": "MR.", "name": "GANI MATEOS", "org": ""}, {"sal": "MR.", "name": "RAFFY ABISAMIS", "org": ""}];
+let SPONSORS=JSON.parse(JSON.stringify(SPONSORS_BUILTIN));
 const CAT_META={
   easy:{label:'Easy',pts:1,ptsLbl:'1 pt',color:'#27AE60',border:'rgba(39,174,96,.42)',bg:'rgba(39,174,96,.10)'},
   average:{label:'Average',pts:3,ptsLbl:'3 pts',color:'#2980B9',border:'rgba(41,128,185,.42)',bg:'rgba(41,128,185,.10)'},
@@ -870,7 +898,7 @@ ROUNDS.forEach(r=>{ S.marks[r]={}; S.used[r]=[]; });
 const PRESETS_BUILTIN={easy:10,average:10,difficult:10,clincher:30,calc:30};
 let presets={...PRESETS_BUILTIN};
 let timerRunning=false,timerLeft=10,timerMax=10,timerInt=null,revealed=false;
-let soundOn=true,hudVis=true,spotIdx=0,spotTimer=null,prevPos={};
+let soundOn=true,hudVis=true,prevPos={};
 
 /* ═══ AUDIO ═══ */
 let _ac=null;
@@ -1102,11 +1130,16 @@ function cfgApply(c,quiet){
     ROUNDS.forEach(r=>{ if(Array.isArray(c.banks[r])) BANKS[r]=c.banks[r].map(q=>({
       q:String(q.q||''), ans:String(q.ans||''), calc:!!q.calc })); });
   }
+  if(Array.isArray(c.sponsors)){
+    SPONSORS=c.sponsors.map(x=>({sal:String(x.sal||''), name:String(x.name||''), org:String(x.org||'')}));
+    if(spIdx>=SPONSORS.length) spIdx=0;
+  }
   if(c.presets){ Object.keys(PRESETS_BUILTIN).forEach(k=>{
     const v=parseInt(c.presets[k],10); if(v>0&&v<=600) presets[k]=v; }); }
   cfgVer=c.v||cfgVer;
   if(!quiet){
     if(S.screen==='sc-grid') renderGrid();
+    if(S.screen==='sc-sponsors') renderSponsors();
     if(S.screen==='sc-mech') renderMech();
     if(!timerRunning && S.slot<0){ timerMax=presets[S.cat]; timerLeft=timerMax; updTimer(); }
     const tb=document.getElementById('tbadge'); if(tb) tb.textContent=presets[S.cat]+'s';
@@ -1115,7 +1148,7 @@ function cfgApply(c,quiet){
 }
 function cfgCurrent(){
   const b={}; ROUNDS.forEach(r=>b[r]=BANKS[r]||[]);
-  return {banks:b, presets:{...presets}, v:cfgVer};
+  return {banks:b, presets:{...presets}, sponsors:SPONSORS.map(x=>({...x})), v:cfgVer};
 }
 function cfgLoadLocal(){
   try{ const raw=localStorage.getItem(CFG_KEY); if(raw) cfgApply(JSON.parse(raw),true); }catch(e){}
@@ -1127,7 +1160,7 @@ async function cfgPushCloud(c){ await rowPush('config',c); }
 function cfgOpen(){
   cfgDraft=JSON.parse(JSON.stringify(cfgCurrent()));
   cfgRound=S.cat||'easy';
-  cfgTab('q'); cfgRenderRounds(); cfgRenderQ(); cfgRenderT(); cfgRenderB();
+  cfgTab('q'); cfgRenderRounds(); cfgRenderQ(); cfgRenderS(); cfgRenderT(); cfgRenderB();
   document.getElementById('m-cfg').classList.add('show');
 }
 function cfgTab(t){
@@ -1172,6 +1205,39 @@ function cfgRenderQ(){
       ' already been played. Deleting or reordering them will not match the scores already recorded — edit the wording only, or reset that round first.'; }
   else w.style.display='none';
 }
+function cfgRenderS(){
+  const list=document.getElementById('sed-list'); if(!list)return;
+  list.innerHTML='';
+  const arr=cfgDraft.sponsors||(cfgDraft.sponsors=[]);
+  arr.forEach((sp,i)=>{
+    const d=document.createElement('div'); d.className='sed-row';
+    d.innerHTML=
+      '<div class="qed-no" style="padding-top:0">'+(i+1)+'</div>'+
+      '<input type="text" id="sp-s'+i+'" value="'+esc(sp.sal||'')+'" placeholder="MR." list="sal-opts">'+
+      '<input type="text" id="sp-n'+i+'" value="'+esc(sp.name||'')+'" placeholder="Full name">'+
+      '<input type="text" id="sp-o'+i+'" value="'+esc(sp.org||'')+'" placeholder="Optional — company or group">'+
+      '<div class="sed-ord">'+
+        '<button title="Move up" onclick="spMove('+i+',-1)"'+(i===0?' disabled':'')+'>↑</button>'+
+        '<button title="Move down" onclick="spMove('+i+',1)"'+(i===arr.length-1?' disabled':'')+'>↓</button>'+
+      '</div>'+
+      '<button class="qed-del" style="padding-top:0" title="Remove this sponsor" onclick="spDel('+i+')">✕</button>';
+    list.appendChild(d);
+  });
+  const withOrg=arr.filter(x=>(x.org||'').trim()).length;
+  document.getElementById('sed-count').textContent=
+    arr.length+' sponsor'+(arr.length===1?'':'s')+' · '+withOrg+' with an organization';
+}
+function spAdd(){ cfgCollect(); (cfgDraft.sponsors=cfgDraft.sponsors||[]).push({sal:'MR.',name:'',org:''});
+  cfgRenderS(); const l=document.getElementById('sed-list'); l.scrollTop=l.scrollHeight; }
+function spDel(i){ cfgCollect();
+  const a=cfgDraft.sponsors, nm=(a[i]&&a[i].name)||'this sponsor';
+  if(!confirm('Remove '+nm+' from the sponsors display?'))return;
+  a.splice(i,1); cfgRenderS(); }
+function spMove(i,d){ cfgCollect();
+  const a=cfgDraft.sponsors, j=i+d;
+  if(j<0||j>=a.length)return;
+  [a[i],a[j]]=[a[j],a[i]]; cfgRenderS(); }
+
 function cfgRenderT(){
   const g=document.getElementById('tmr-grid'); g.innerHTML='';
   const rows=[['easy','Easy round'],['average','Average round'],['difficult','Difficult round'],
@@ -1189,7 +1255,8 @@ function cfgRenderB(){
   const t=ROUNDS.reduce((n,r)=>n+(cfgDraft.banks[r]||[]).length,0);
   const c=ROUNDS.reduce((n,r)=>n+(cfgDraft.banks[r]||[]).filter(q=>q.calc).length,0);
   document.getElementById('cfg-binfo').innerHTML=
-    'Currently loaded: <b>'+t+'</b> questions across '+ROUNDS.length+' rounds, <b>'+c+'</b> tagged ∑ computation.'+
+    'Currently loaded: <b>'+t+'</b> questions across '+ROUNDS.length+' rounds, <b>'+c+'</b> tagged ∑ computation, '+
+    '<b>'+(cfgDraft.sponsors||[]).length+'</b> sponsors.'+
     (cfgVer?'<br>Last saved '+new Date(cfgVer).toLocaleString():'<br>Using the built-in question set.');
 }
 /* pull the on-screen fields back into the draft */
@@ -1200,6 +1267,12 @@ function cfgCollect(){
     if(qe) q.q=qe.value.trim();
     if(ae) q.ans=ae.value.trim();
     if(ce) q.calc=ce.checked;
+  });
+  (cfgDraft.sponsors||[]).forEach((sp,i)=>{
+    const se=document.getElementById('sp-s'+i), ne=document.getElementById('sp-n'+i), oe=document.getElementById('sp-o'+i);
+    if(se) sp.sal=se.value.trim();
+    if(ne) sp.name=ne.value.trim();
+    if(oe) sp.org=oe.value.trim();
   });
   Object.keys(cfgDraft.presets).forEach(k=>{
     const e=document.getElementById('tm-'+k); if(!e)return;
@@ -1231,8 +1304,9 @@ function cfgSave(){
 }
 function cfgFactory(){
   if(!confirm('Discard all question and timer edits and go back to the built-in set?\n\nDownload a backup first if you might want them again.'))return;
-  cfgDraft={banks:JSON.parse(JSON.stringify(BANKS_BUILTIN)), presets:{...PRESETS_BUILTIN}, v:Date.now()};
-  cfgRenderRounds(); cfgRenderQ(); cfgRenderT(); cfgRenderB();
+  cfgDraft={banks:JSON.parse(JSON.stringify(BANKS_BUILTIN)), presets:{...PRESETS_BUILTIN},
+            sponsors:JSON.parse(JSON.stringify(SPONSORS_BUILTIN)), v:Date.now()};
+  cfgRenderRounds(); cfgRenderQ(); cfgRenderS(); cfgRenderT(); cfgRenderB();
   toast('Built-in set loaded into the editor — press Save & sync to apply it.',5200);
 }
 function cfgExport(){
@@ -1254,9 +1328,11 @@ function cfgImport(inp){
     if(!d||!d.banks){ alert('That file does not contain a question set.'); return; }
     const n=ROUNDS.reduce((s,r)=>s+((d.banks[r]||[]).length),0);
     if(!confirm('Load '+n+' questions from this file into the editor?\n\nNothing is applied until you press Save & sync.'))return;
-    cfgDraft={banks:{}, presets:{...PRESETS_BUILTIN, ...(d.presets||{})}, v:Date.now()};
+    cfgDraft={banks:{}, presets:{...PRESETS_BUILTIN, ...(d.presets||{})},
+              sponsors:Array.isArray(d.sponsors)?d.sponsors.map(x=>({sal:String(x.sal||''),name:String(x.name||''),org:String(x.org||'')})):SPONSORS.map(x=>({...x})),
+              v:Date.now()};
     ROUNDS.forEach(r=>cfgDraft.banks[r]=Array.isArray(d.banks[r])?d.banks[r].map(q=>({q:String(q.q||''),ans:String(q.ans||''),calc:!!q.calc})):[]);
-    cfgRenderRounds(); cfgRenderQ(); cfgRenderT(); cfgRenderB(); cfgTab('q');
+    cfgRenderRounds(); cfgRenderQ(); cfgRenderS(); cfgRenderT(); cfgRenderB(); cfgTab('q');
     toast('Backup loaded into the editor — press Save & sync to apply it.',5200);
   };
   rd.readAsText(f);
@@ -1345,7 +1421,8 @@ function renderSponsors(){
     g.innerHTML='';
     SPONSORS.forEach((s,i)=>{ const c=document.createElement('div'); c.className='sp-card';
       c.style.animationDelay=(i*0.06)+'s';
-      c.innerHTML='<div class="ic">🏅</div><div class="sal">'+esc(s.sal)+'</div><div class="nm">'+esc(s.name)+'</div>';
+      c.innerHTML='<div class="ic">🏅</div><div class="sal">'+esc(s.sal)+'</div><div class="nm">'+esc(s.name)+'</div>'+
+                  (s.org?'<div class="org">'+esc(s.org)+'</div>':'');
       g.appendChild(c); });
   }else{ paintSpot(); }
   const b=document.getElementById('b-spview'); if(b) b.textContent = spView==='grid'?'◎ Spotlight':'▦ Show All';
@@ -1358,8 +1435,10 @@ function paintSpot(){
   const sal=document.getElementById('spot-sal'), nm=document.getElementById('spot-nm'), ct=document.getElementById('spot-ct');
   if(!nm)return;
   sal.textContent=s.sal; nm.textContent=s.name;
+  const og=document.getElementById('spot-org');
+  if(og){ og.textContent=s.org||''; og.style.display=s.org?'':'none'; }
   ct.textContent='Sponsor '+(spIdx+1)+' of '+SPONSORS.length;
-  [sal,nm].forEach(e=>{e.classList.remove('fadein'); void e.offsetWidth; e.classList.add('fadein');});
+  [sal,nm,og].forEach(e=>{if(!e)return; e.classList.remove('fadein'); void e.offsetWidth; e.classList.add('fadein');});
 }
 function toggleSpot(){ spView = spView==='grid'?'spot':'grid'; if(spView==='grid') stopSpAuto(); renderSponsors(); sync(); }
 function spNext(d){ spView='spot'; spIdx+=d; renderSponsors(); sync(); }
@@ -1368,20 +1447,9 @@ function startSpAuto(){ spView='spot'; spAuto=true; clearInterval(spTimer);
   spTimer=setInterval(()=>{ spIdx++; paintSpot(); sync(); }, SP_MS); renderSponsors(); }
 function stopSpAuto(){ spAuto=false; clearInterval(spTimer);
   const a=document.getElementById('b-spauto'); if(a){a.textContent='▶ Auto-Play';a.classList.remove('primary');} }
-function spotStep(){
-  spotIdx=(spotIdx+1)%SPONSORS.length; const s=SPONSORS[spotIdx];
-  const n=document.getElementById('spot-name'),l=document.getElementById('spot-sal');
-  l.textContent=s.sal; n.textContent=s.name;
-  document.getElementById('spot-ct').textContent='Sponsor '+(spotIdx+1)+' of '+SPONSORS.length;
-  [n,l].forEach(e=>{e.classList.remove('fadein');void e.offsetWidth;e.classList.add('fadein');});
-}
-function toggleSpot(){
-  const sp=document.getElementById('sp-spot'),gr=document.getElementById('sp-grid');
-  const on=sp.style.display==='flex';
-  sp.style.display=on?'none':'flex'; gr.style.display=on?'grid':'none';
-  clearInterval(spotTimer);
-  if(!on){ spotIdx=-1; spotStep(); spotTimer=setInterval(spotStep,4200); }
-}
+/* A legacy spotStep/toggleSpot pair used to sit here and silently overrode the
+   real one above: it drove the Command Center only and never reached the 2nd
+   screen or the cloud. Removed. */
 
 /* ═══ TABULATION ═══ */
 function renderTab(target){
@@ -1712,7 +1780,7 @@ function audPayload(){
   return {type:'picpa2', teams:S.teams, marks:S.marks, used:S.used, cat:S.cat, slot:S.slot,
           screen:(audTarget==='mirror'? S.screen : audTarget),
           revealed:revealed, spView:spView, spIdx:spIdx,
-          timerLeft:timerLeft, timerMax:timerMax, snd:soundOn, mecIdx:mecIdx};
+          timerLeft:timerLeft, timerMax:timerMax, snd:soundOn, mecIdx:mecIdx, cfgV:cfgVer};
 }
 function pushSecond(){
   if(!audWin||audWin.closed)return;
@@ -1747,6 +1815,10 @@ function childTimeUp(){
 
 function applyAud(d){
   audSound(d);
+  /* Command Center saved new questions / sponsors / timers — pick them up */
+  if(typeof d.cfgV==='number' && d.cfgV!==cfgVer){
+    try{ const raw=localStorage.getItem(CFG_KEY); if(raw){ cfgApply(JSON.parse(raw)); _audSig=''; } }catch(e){}
+  }
   // timer values are cheap — always accept them
   timerLeft=d.timerLeft; timerMax=d.timerMax;
 
@@ -2060,6 +2132,7 @@ setCat('easy',false); flow('grid'); renderSponsors(); renderTab(); renderTeamBtn
 if(IS_CHILD){
   MODE='aud'; document.body.classList.add('child');
   const h=document.getElementById('hud'); if(h){h.style.display='none';}
+  cfgLoadLocal();                 // same browser → same saved questions, sponsors and timers
   go('sc-idle',false);
 }else{
   if(URL_ROLE==='tabulator'){ setMode('tab'); }
@@ -2077,6 +2150,7 @@ if(IS_CHILD){
 }          // both laptops poll: scores merge live
 measHud(); setTimeout(measHud,300);
 </script>
+<datalist id="sal-opts"><option value="MR."><option value="MS."><option value="MRS."><option value="DR."><option value="DRA."><option value="ENGR."><option value="ATTY."><option value="CPA"><option value="CHEF"></datalist>
 <div id="toast"></div>
 <div id="sndlock" onclick="unlockAudio()">🔇 Click anywhere to turn on sound</div>
 </body>
