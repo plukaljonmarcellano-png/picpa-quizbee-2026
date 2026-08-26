@@ -2042,14 +2042,19 @@ async function markPush(round,slot,team,add,val,isRetry){
 }
 async function marksPull(){
   try{
-    const r=await fetch(REST+'quizbee_marks?select=round,slot,team_idx',{headers:H});
+    const r=await fetch(REST+'quizbee_marks?select=round,slot,team_idx,val',{headers:H});
     if(!r.ok){setDot('err');return false;}
     const rows=await r.json(); setDot('ok');
     const m={},wr={}; ROUNDS.forEach(x=>{m[x]={};wr[x]={};});
     const put=(o,rd,sl,t)=>{ if(!o[rd])o[rd]={}; if(!o[rd][sl])o[rd][sl]=[];
                              if(!o[rd][sl].includes(t)) o[rd][sl].push(t); };
     const drop=(o,rd,sl,t)=>{ const a=o[rd]&&o[rd][sl]; if(!a)return; const i=a.indexOf(t); if(i>=0)a.splice(i,1); };
-    rows.forEach(x=>{ put((x.val===0?wr:m), x.round, x.slot, x.team_idx); });
+    rows.forEach(x=>{
+      /* val: 1 = correct, 0 = incorrect. Treat only an explicit 1 (or a legacy
+         row written before the column existed, which defaults to 1) as correct. */
+      const correct = (x.val===undefined||x.val===null) ? true : Number(x.val)!==0;
+      put(correct?m:wr, x.round, x.slot, x.team_idx);
+    });
     /* replay anything still queued offline so the board never appears to lose it */
     pending.forEach(p=>{
       drop(m,p.round,p.slot,p.team); drop(wr,p.round,p.slot,p.team);
