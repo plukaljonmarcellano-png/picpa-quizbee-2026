@@ -59,47 +59,51 @@ body.child .sh-rail,body.audience .sh-rail{display:none;}
 .rcard .rt i{display:block;height:100%;border-radius:3px;background:currentColor;transition:width .35s;}
 
 /* left rail */
-.sh-rail{width:clamp(210px,17vw,290px);flex:none;display:flex;flex-direction:column;min-height:0;
-  background:linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.16));
-  border-right:1px solid rgba(255,255,255,.09);padding:clamp(9px,1.5vh,16px) clamp(8px,.8vw,14px);gap:9px;}
-.rail-h{font-size:10px;font-weight:800;letter-spacing:2.8px;text-transform:uppercase;color:var(--gold);flex:none;}
+.sh-rail{width:clamp(214px,17.5vw,300px);flex:none;display:flex;flex-direction:column;min-height:0;
+  background:rgba(255,255,255,.96);border-right:3px solid var(--gold);
+  padding:clamp(9px,1.5vh,16px) clamp(9px,.9vw,15px);gap:9px;}
+.rail-h{font-size:11px;font-weight:800;letter-spacing:2.4px;text-transform:uppercase;color:#8A6D0B;flex:none;
+  border-bottom:2px solid var(--gold);padding-bottom:7px;}
 .rail-rounds{display:grid;grid-template-columns:1fr 1fr;gap:5px;flex:none;}
-.rail-rb{border:1.5px solid rgba(255,255,255,.13);border-radius:8px;background:rgba(255,255,255,.03);
+.rail-rb{border:2px solid #D9D9D9;border-radius:8px;background:#F2F2F2;
   padding:7px 4px;cursor:pointer;text-align:center;transition:all .15s;}
-.rail-rb:hover{border-color:rgba(255,255,255,.32);}
-.rail-rb.on{border-color:currentColor;background:rgba(255,255,255,.07);}
+.rail-rb:hover{border-color:#1F2A44;}
+.rail-rb.on{border-color:var(--gold);background:#FFF4C7;box-shadow:0 2px 8px rgba(0,0,0,.12);}
 .rail-rb .n{display:block;font-size:11px;font-weight:800;letter-spacing:.4px;}
-.rail-rb .c{display:block;font-size:9px;font-weight:600;color:rgba(255,255,255,.40);margin-top:2px;}
+.rail-rb .c{display:block;font-size:9px;font-weight:700;color:#7A7A7A;margin-top:2px;}
 .rail-nav{display:flex;align-items:center;gap:7px;flex:none;}
-.rail-arrow{width:32px;height:34px;flex:none;border:1px solid rgba(255,255,255,.15);border-radius:8px;
-  background:rgba(255,255,255,.04);color:rgba(255,255,255,.75);font-size:17px;cursor:pointer;}
-.rail-arrow:hover{border-color:var(--gold);color:var(--gold);}
-.rail-q{flex:1;display:flex;align-items:baseline;justify-content:center;gap:6px;height:34px;
-  border:1px solid rgba(255,255,255,.15);border-radius:8px;background:rgba(255,255,255,.04);}
-.rail-q .lbl{font-size:10px;font-weight:700;letter-spacing:1.4px;color:rgba(255,255,255,.40);}
-.rail-q .num{font-family:'Bebas Neue',sans-serif;font-size:21px;color:var(--gold);line-height:1;}
-.rail-q .of{font-size:10px;color:rgba(255,255,255,.35);}
-.rail-live{display:none;flex:none;border:1px solid rgba(201,162,39,.5);border-radius:8px;
-  background:rgba(201,162,39,.14);color:var(--gold);font-size:10px;font-weight:700;letter-spacing:1.1px;
+.rail-arrow{width:34px;height:36px;flex:none;border:none;border-radius:6px;
+  background:#1F2A44;color:#fff;font-size:17px;font-weight:700;cursor:pointer;}
+.rail-arrow:hover{background:var(--gold);color:#1F2A44;}
+.rail-q{flex:1;display:flex;align-items:baseline;justify-content:center;gap:6px;height:36px;
+  border:2px solid #D9D9D9;border-radius:6px;background:#fff;}
+.rail-q .lbl{font-size:10px;font-weight:800;letter-spacing:1.4px;color:#8A8A8A;}
+.rail-q .num{font-size:20px;font-weight:800;color:#1F2A44;line-height:1;}
+.rail-q .of{font-size:10px;font-weight:700;color:#8A8A8A;}
+.rail-live{display:none;flex:none;border:2px solid var(--gold);border-radius:6px;
+  background:#FFF4C7;color:#8A6D0B;font-size:10px;font-weight:800;letter-spacing:1.1px;
   padding:7px;cursor:pointer;}
 .rail-live.show{display:block;}
-.rail-qtext{flex:none;font-size:11px;line-height:1.45;color:rgba(255,255,255,.55);
-  background:rgba(255,255,255,.035);border-radius:8px;padding:8px 10px;max-height:74px;overflow:auto;}
+.rail-qtext{flex:none;font-size:11.5px;line-height:1.45;color:#333;font-weight:500;
+  background:#F2F2F2;border-left:3px solid var(--gold);border-radius:6px;padding:8px 10px;
+  max-height:76px;overflow:auto;}
 .rail-teams{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:4px;}
-.rt-row{display:flex;align-items:center;gap:5px;padding:3px 4px;border-radius:8px;background:rgba(255,255,255,.03);}
-.rt-row.ok{background:rgba(39,174,96,.13);}
-.rt-i{width:17px;flex:none;text-align:center;font-size:10px;font-weight:800;color:rgba(255,255,255,.32);}
-.rt-n{flex:1;min-width:0;font-size:12px;font-weight:700;color:rgba(255,255,255,.88);
+.rt-row{display:flex;align-items:center;gap:6px;padding:5px 7px;border-radius:6px;
+  background:#F2F2F2;border:2px solid transparent;transition:all .12s;}
+.rt-row.correct{background:#C8E6C9;border-color:#2E7D32;}
+.rt-row.wrong{background:#FFCDD2;border-color:#C62828;}
+.rt-i{width:17px;flex:none;text-align:center;font-size:11px;font-weight:800;color:#1F2A44;}
+.rt-n{flex:1;min-width:0;font-size:12.5px;font-weight:700;color:#1F2A44;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.rt-b{width:29px;height:27px;flex:none;border-radius:7px;border:1.5px solid;background:transparent;
-  font-size:13px;font-weight:900;cursor:pointer;line-height:1;transition:all .13s;}
-.rt-y{border-color:rgba(39,174,96,.42);color:#2ECC71;}
-.rt-y:hover,.rt-y.on{background:#2ECC71;border-color:#2ECC71;color:#062b16;}
-.rt-x{border-color:rgba(192,57,43,.42);color:#E0736A;}
-.rt-x:hover,.rt-x.on{background:#C0392B;border-color:#C0392B;color:#fff;}
-.rail-csv{flex:none;border:1px solid rgba(255,255,255,.16);border-radius:8px;background:rgba(255,255,255,.04);
-  color:rgba(255,255,255,.72);font-size:10px;font-weight:700;letter-spacing:1.1px;padding:9px;cursor:pointer;}
-.rail-csv:hover{border-color:var(--gold);color:var(--gold);}
+.rt-b{width:30px;height:28px;flex:none;border-radius:5px;border:2px solid;background:#fff;
+  font-size:14px;font-weight:900;cursor:pointer;line-height:1;transition:all .13s;}
+.rt-y{border-color:#2E7D32;color:#2E7D32;}
+.rt-y:hover,.rt-y.on{background:#2E7D32;border-color:#2E7D32;color:#fff;}
+.rt-x{border-color:#C62828;color:#C62828;}
+.rt-x:hover,.rt-x.on{background:#C62828;border-color:#C62828;color:#fff;}
+.rail-csv{flex:none;border:2px solid #1F2A44;border-radius:6px;background:#1F2A44;
+  color:#fff;font-size:10px;font-weight:800;letter-spacing:1.1px;padding:9px;cursor:pointer;}
+.rail-csv:hover{background:var(--gold);border-color:var(--gold);color:#1F2A44;}
 
 /* SCORESHEET — broadcast scoreboard */
 #sc-sheet{align-items:stretch;justify-content:flex-start;padding:0;
@@ -144,7 +148,7 @@ body.child .sh-rail,body.audience .sh-rail{display:none;}
 /* column headers */
 .sh-head-row{padding-bottom:clamp(2px,.5vh,6px);}
 .sh-head-row>*{font-size:clamp(9px,.88vw,13px);font-weight:800;letter-spacing:2px;text-transform:uppercase;
-  color:rgba(255,255,255,.30);}
+  color:rgba(255,255,255,.42);}
 .sh-head-row .sh-c-q{font-family:'Bebas Neue',sans-serif;font-size:clamp(13px,1.35vw,21px);letter-spacing:1px;
   color:rgba(255,255,255,.42);}
 .sh-head-row .sh-c-q.live{color:var(--navy);background:var(--gold);border-radius:7px;
@@ -152,41 +156,39 @@ body.child .sh-rail,body.audience .sh-rail{display:none;}
 .sh-head-row .sh-c-pts,.sh-head-row .sh-c-tot{color:var(--gold);}
 
 /* team lanes */
-.sh-lane{flex:1 1 0;min-height:0;border-radius:11px;
-  background:linear-gradient(90deg,rgba(255,255,255,.055),rgba(255,255,255,.022) 42%,rgba(255,255,255,.012));
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);position:relative;overflow:hidden;}
-.sh-lane.top{background:linear-gradient(90deg,rgba(201,162,39,.20),rgba(201,162,39,.06) 46%,rgba(201,162,39,.02));
-  box-shadow:inset 0 0 0 1px rgba(201,162,39,.36),0 4px 20px rgba(0,0,0,.28);}
-.sh-lane .sh-c-rank{font-family:'Bebas Neue',sans-serif;font-size:clamp(15px,1.7vw,28px);
-  color:rgba(255,255,255,.34);letter-spacing:1px;}
-.sh-lane.m1 .sh-c-rank{color:#F4D76A;} .sh-lane.m2 .sh-c-rank{color:#CFD6DD;} .sh-lane.m3 .sh-c-rank{color:#D08B5B;}
-.sh-nm{font-size:clamp(12px,1.35vw,23px);font-weight:700;letter-spacing:.4px;color:rgba(255,255,255,.93);
+.sh-lane{flex:1 1 0;min-height:0;border-radius:10px;background:rgba(255,255,255,.96);
+  border-left:5px solid #D9D9D9;box-shadow:0 3px 10px rgba(0,0,0,.25);
+  position:relative;overflow:hidden;transition:background .3s,border-color .3s;}
+.sh-lane.m1{background:linear-gradient(90deg,#FFF8DC 0%,#FFFFFF 100%);border-left-color:#FFD700;}
+.sh-lane.m2{background:linear-gradient(90deg,#F5F5F5 0%,#FFFFFF 100%);border-left-color:#C0C0C0;}
+.sh-lane.m3{background:linear-gradient(90deg,#FFEFE0 0%,#FFFFFF 100%);border-left-color:#CD7F32;}
+.sh-lane .sh-c-rank{font-size:clamp(14px,1.6vw,26px);font-weight:800;color:#1F2A44;letter-spacing:0;}
+.sh-c-rank .suffix{font-size:.52em;opacity:.6;font-weight:700;}
+.sh-lane.m1 .sh-c-rank{color:#B8860B;} .sh-lane.m2 .sh-c-rank{color:#808080;} .sh-lane.m3 .sh-c-rank{color:#8B4513;}
+.sh-nm{font-size:clamp(12px,1.35vw,23px);font-weight:700;letter-spacing:.2px;color:#1F2A44;
   padding-left:clamp(8px,.8vw,14px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;}
-.sh-lane.top .sh-nm{color:#F6E4A8;}
+.sh-lane.m1 .sh-nm{color:#7A5C00;}
 
 /* mark chips */
 .sh-chip{width:clamp(19px,2.1vw,38px);height:clamp(19px,2.1vw,38px);border-radius:50%;
   display:flex;align-items:center;justify-content:center;font-size:clamp(10px,1.2vw,21px);
   font-weight:900;line-height:1;transition:transform .16s,box-shadow .16s;}
-.sh-chip.ok{background:linear-gradient(160deg,#2ECC71,#1E8449);color:#062b16;
-  box-shadow:0 0 16px rgba(46,204,113,.45),inset 0 1px 0 rgba(255,255,255,.35);}
-.sh-chip.no{background:rgba(192,57,43,.13);color:rgba(231,120,110,.85);
-  box-shadow:inset 0 0 0 1.5px rgba(192,57,43,.34);}
-.sh-chip.pend{width:clamp(4px,.42vw,7px);height:clamp(4px,.42vw,7px);background:rgba(255,255,255,.16);
-  box-shadow:none;}
+.sh-chip.ok{background:#2E7D32;color:#fff;box-shadow:0 2px 7px rgba(46,125,50,.45);}
+.sh-chip.no{background:#FFCDD2;color:#C62828;box-shadow:inset 0 0 0 2px rgba(198,40,40,.45);}
+.sh-chip.pend{width:clamp(4px,.42vw,7px);height:clamp(4px,.42vw,7px);background:#C9CDD4;box-shadow:none;}
 .sh-c-q.live .sh-chip{transform:scale(1.10);}
-.sh-c-q.live{background:rgba(201,162,39,.10);border-radius:9px;}
+.sh-c-q.live{background:rgba(201,162,39,.22);border-radius:8px;}
 @keyframes chippop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.18)}100%{transform:scale(1);opacity:1}}
 .sh-chip.pop{animation:chippop .30s cubic-bezier(.34,1.56,.64,1);}
 
 /* score columns */
-.sh-pts{font-family:'Bebas Neue',sans-serif;font-size:clamp(19px,2.3vw,38px);line-height:1;color:var(--gold);
-  letter-spacing:1px;}
-.sh-lane.top .sh-pts{text-shadow:0 0 22px rgba(201,162,39,.55);}
-.sh-tot{font-size:clamp(11px,1.15vw,19px);font-weight:800;color:rgba(255,255,255,.46);}
+.sh-pts{font-size:clamp(15px,1.85vw,30px);font-weight:800;line-height:1;color:#1F2A44;
+  background:#FFF4C7;border:2px solid var(--gold);border-radius:8px;padding:4px clamp(6px,.7vw,12px);min-width:100%;text-align:center;}
+.sh-lane.m1 .sh-pts{background:#FFD700;border-color:#B8860B;}
+.sh-tot{font-size:clamp(11px,1.15vw,19px);font-weight:800;color:#5A6272;}
 
 body.editable .sh-c-q{cursor:pointer;border-radius:9px;}
-body.editable .sh-c-q:hover{background:rgba(201,162,39,.22);}
+body.editable .sh-c-q:hover{background:rgba(201,162,39,.34);}
 body.editable .sh-c-q:hover .sh-chip{transform:scale(1.16);}
 
 .sh-foot{text-align:center;font-size:clamp(8px,.88vw,12px);letter-spacing:2.6px;text-transform:uppercase;
@@ -1116,9 +1118,9 @@ const NTEAMS=12;
 let S = {
   teams: Array.from({length:NTEAMS},(_,i)=>'Team '+(i+1)),
   // marks[round][slot] = [teamIdx,...]
-  marks: {}, used: {}, screen:'sc-idle', cat:'easy', slot:-1, rev:0
+  marks: {}, wrong: {}, used: {}, screen:'sc-idle', cat:'easy', slot:-1, rev:0
 };
-ROUNDS.forEach(r=>{ S.marks[r]={}; S.used[r]=[]; });
+ROUNDS.forEach(r=>{ S.marks[r]={}; S.wrong[r]={}; S.used[r]=[]; });
 
 const PRESETS_BUILTIN={easy:10,average:10,difficult:10,clincher:30,calc:30};
 let presets={...PRESETS_BUILTIN};
@@ -1738,20 +1740,19 @@ function renderRail(){
   qt.innerHTML = item ? (esc(item.q||'—')+(item.calc?' <b style="color:var(--gold)">∑</b>':''))
                       : '<i style="opacity:.5">No question selected</i>';
 
-  const marks=(S.marks[S.cat]||{})[q]||[];
   document.getElementById('rail-teams').innerHTML=S.teams.map((nm,i)=>{
     if(!nm||!nm.trim())return '';
-    const on=marks.includes(i);
-    return '<div class="rt-row'+(on?' ok':'')+'">'+
+    const st=markState(S.cat,q,i);
+    const cls=st===1?' correct':(st===0?' wrong':'');
+    return '<div class="rt-row'+cls+'">'+
       '<span class="rt-i">'+(i+1)+'</span><span class="rt-n" title="'+esc(nm)+'">'+esc(nm)+'</span>'+
-      '<button class="rt-b rt-y'+(on?' on':'')+'" onclick="railMark('+i+',true)" title="Correct">✓</button>'+
-      '<button class="rt-b rt-x" onclick="railMark('+i+',false)" title="Not correct">✗</button></div>';
+      '<button class="rt-b rt-y'+(st===1?' on':'')+'" onclick="railMark('+i+',1)" title="Correct">✓</button>'+
+      '<button class="rt-b rt-x'+(st===0?' on':'')+'" onclick="railMark('+i+',0)" title="Incorrect">✗</button></div>';
   }).join('');
 }
-function railMark(ti,want){
+function railMark(ti,val){
   const q=shTarget(); if(q<0){ toast('Open a question first.',3000); return; }
-  const cur=((S.marks[S.cat]||{})[q]||[]).includes(ti);
-  if(cur!==want) sheetToggle(q,ti);
+  sheetToggle(q,ti,val);
 }
 
 /* ---- CSV export: the full team × question matrix, audit-ready ---- */
@@ -1770,9 +1771,9 @@ function exportCSV(){
     ROUNDS.forEach(r=>{
       const n=(BANKS[r]||[]).length, marks=S.marks[r]||{}, used=S.used[r]||[];
       for(let i=0;i<n;i++){
-        const got=(marks[i]||[]).includes(ti);
-        const played=used.includes(i)||(marks[i]&&marks[i].length);
-        row.push(got?1:(played?0:''));
+        const st=markState(r,i,ti);
+        const played=used.includes(i)||(marks[i]&&marks[i].length)||(((S.wrong[r]||{})[i]||[]).length);
+        row.push(st===1?1:((st===0||played)?0:''));
       }
       row.push(r==='clincher'?clincherWins(ti):roundScore(r,ti));
     });
@@ -1791,9 +1792,13 @@ function exportCSV(){
   toast('Scores exported — keep this as your independent backup.',4600);
 }
 
+function ordinal(n){
+  const t=n%100, sfx=(t>=11&&t<=13)?'th':({1:'st',2:'nd',3:'rd'}[n%10]||'th');
+  return n+'<span class="suffix">'+sfx+'</span>';
+}
 function renderSheet(){
   const g=document.getElementById('sh-grid'); if(!g)return;
-  const r=S.cat, m=CAT_META[r], bank=BANKS[r]||[], marks=S.marks[r]||{}, used=S.used[r]||[];
+  const r=S.cat, m=CAT_META[r], bank=BANKS[r]||[], marks=S.marks[r]||{}, wrong=S.wrong[r]||{}, used=S.used[r]||[];
   const n=bank.length;
 
   const hr=document.getElementById('sh-round');
@@ -1823,14 +1828,14 @@ function renderSheet(){
 
   rows.forEach(row=>{
     const medal=anyScore&&row.sc>0&&row.rank<=3?(' m'+row.rank):'';
-    h+='<div class="sh-row sh-lane'+(anyScore&&row.rank===1&&row.sc>0?' top':'')+medal+'">';
-    h+='<div class="sh-c-rank">'+(anyScore&&row.sc>0?row.rank:'&nbsp;')+'</div>';
+    h+='<div class="sh-row sh-lane'+medal+'">';
+    h+='<div class="sh-c-rank">'+(anyScore?ordinal(row.rank):'&nbsp;')+'</div>';
     h+='<div class="sh-c-name"><div class="sh-nm" title="'+esc(row.name)+'">'+esc(row.name)+'</div></div>';
     for(let i=0;i<n;i++){
-      const got=(marks[i]||[]).includes(row.idx);
-      const played=used.includes(i)||(marks[i]&&marks[i].length);
-      const cls=got?'ok':(played?'no':'pend');
-      const gl=got?'✓':(played?'✗':'');
+      const st=markState(r,i,row.idx);
+      const played=used.includes(i)||(marks[i]&&marks[i].length)||((wrong[i]||[]).length);
+      const cls=st===1?'ok':((st===0||played)?'no':'pend');
+      const gl=st===1?'✓':((st===0||played)?'✗':'');
       h+='<div class="sh-c-q'+(i===S.slot?' live':'')+'" data-t="'+row.idx+'" data-q="'+i+'">'+
          '<span class="sh-chip '+cls+'">'+gl+'</span></div>';
     }
@@ -1853,23 +1858,38 @@ function renderSheet(){
 
 /* Toggle one cell. Uses the same granular per-mark write as the scorer strip,
    so two people editing different cells never overwrite each other. */
-function sheetToggle(slot,ti){
+/* One cell, three states: correct → wrong → not judged → correct …
+   `val` may be 1, 0 or null (clear). Writes stay per-cell, so two people
+   judging different teams never overwrite one another. */
+function markState(round,slot,ti){
+  if(((S.marks[round]||{})[slot]||[]).includes(ti)) return 1;
+  if(((S.wrong[round]||{})[slot]||[]).includes(ti)) return 0;
+  return null;
+}
+function setMark(round,slot,ti,val){
+  const put=(o,v)=>{ if(!o[round])o[round]={}; if(!o[round][slot])o[round][slot]=[];
+                     const a=o[round][slot], i=a.indexOf(ti);
+                     if(v && i<0) a.push(ti); if(!v && i>=0) a.splice(i,1); };
+  put(S.marks, val===1); put(S.wrong, val===0);
+  markPush(round,slot,ti,val!==null,val===0?0:1);
+
+  /* Judging a question the Command Center never opened counts it as played, so
+     the grid, the CSV and the results PDF agree. Only the CC may set this —
+     `used` rides the flow row, which the CC owns. */
+  if(val!==null && MODE==='cc' && !(S.used[round]||[]).includes(slot)){
+    (S.used[round]=S.used[round]||[]).push(slot);
+  }
+}
+function sheetToggle(slot,ti,val){
   if(!sheetEditable())return;
-  const r=S.cat;
-  if(!S.marks[r])S.marks[r]={};
-  if(!S.marks[r][slot])S.marks[r][slot]=[];
-  const a=S.marks[r][slot], p=a.indexOf(ti), add=(p<0);
-  if(add)a.push(ti); else a.splice(p,1);
-  /* Marking a question the Command Center never opened counts it as played, so
-     the grid and the results PDF agree. Only the CC may do this: `used` travels
-     in the flow row, which the CC owns — a tabulator writing it locally would be
-     silently overwritten on the next poll. The mark itself still records either way. */
-  if(add && MODE==='cc' && !(S.used[r]||[]).includes(slot)){ (S.used[r]=S.used[r]||[]).push(slot); }
-  markPush(r,slot,ti,add);
+  const r=S.cat, cur=markState(r,slot,ti);
+  if(val===undefined) val = cur===null?1 : (cur===1?0:null);   // cycle
+  else if(val===cur)  val = null;                              // click the active one to clear
+  setMark(r,slot,ti,val);
   renderSheet(); renderTab();
+  if(MODE==='cc'){ renderGrid(); renderTeamBtns(); updNextLabel(); sync(); }
   const c=document.querySelector('.sh-c-q[data-t="'+ti+'"][data-q="'+slot+'"] .sh-chip');
   if(c){ c.classList.add('pop'); setTimeout(()=>c.classList.remove('pop'),340); }
-  if(MODE==='cc'){ renderGrid(); renderTeamBtns(); updNextLabel(); sync(); }
 }
 
 /* ═══ TABULATION ═══ */
@@ -1987,11 +2007,11 @@ function setDot(st){ cloudOK=st;
 /* --- marks: one row per (round,slot,team) so both laptops can score at once --- */
 const pending=[];                       // marks that failed to reach the cloud
 function pendKey(r,s,t){return r+'|'+s+'|'+t;}
-function pendAdd(round,slot,team,add){
+function pendAdd(round,slot,team,add,val){
   const k=pendKey(round,slot,team);
   const i=pending.findIndex(p=>pendKey(p.round,p.slot,p.team)===k);
   if(i>=0) pending.splice(i,1);
-  pending.push({round,slot,team,add});
+  pending.push({round,slot,team,add,val:(typeof val==='number'?val:1)});
   updPend();
 }
 function updPend(){
@@ -2002,40 +2022,40 @@ function updPend(){
 async function retryPending(){
   if(!pending.length)return;
   const q=pending.splice(0,pending.length); updPend();
-  for(const p of q){ await markPush(p.round,p.slot,p.team,p.add,true); }
+  for(const p of q){ await markPush(p.round,p.slot,p.team,p.add,p.val,true); }
 }
-async function markPush(round,slot,team,add,isRetry){
+async function markPush(round,slot,team,add,val,isRetry){
+  if(typeof val!=='number') val=1;                 // default: a plain mark means correct
   try{
     let r;
     if(add){
       r=await fetch(REST+'quizbee_marks',{method:'POST',
         headers:{...H,'Prefer':'resolution=merge-duplicates,return=minimal'},
-        body:JSON.stringify({round,slot,team_idx:team})});
+        body:JSON.stringify({round,slot,team_idx:team,val})});
     }else{
       r=await fetch(REST+'quizbee_marks?round=eq.'+encodeURIComponent(round)+'&slot=eq.'+slot+'&team_idx=eq.'+team,
         {method:'DELETE',headers:{...H,'Prefer':'return=minimal'}});
     }
     setDot(r.ok?'ok':'err');
-    if(!r.ok) pendAdd(round,slot,team,add);
-  }catch(e){ setDot('err'); pendAdd(round,slot,team,add); }
+    if(!r.ok) pendAdd(round,slot,team,add,val);
+  }catch(e){ setDot('err'); pendAdd(round,slot,team,add,val); }
 }
 async function marksPull(){
   try{
     const r=await fetch(REST+'quizbee_marks?select=round,slot,team_idx',{headers:H});
     if(!r.ok){setDot('err');return false;}
     const rows=await r.json(); setDot('ok');
-    const m={}; ROUNDS.forEach(x=>m[x]={});
-    rows.forEach(x=>{ if(!m[x.round])m[x.round]={};
-      if(!m[x.round][x.slot])m[x.round][x.slot]=[];
-      m[x.round][x.slot].push(x.team_idx); });
+    const m={},wr={}; ROUNDS.forEach(x=>{m[x]={};wr[x]={};});
+    const put=(o,rd,sl,t)=>{ if(!o[rd])o[rd]={}; if(!o[rd][sl])o[rd][sl]=[];
+                             if(!o[rd][sl].includes(t)) o[rd][sl].push(t); };
+    const drop=(o,rd,sl,t)=>{ const a=o[rd]&&o[rd][sl]; if(!a)return; const i=a.indexOf(t); if(i>=0)a.splice(i,1); };
+    rows.forEach(x=>{ put((x.val===0?wr:m), x.round, x.slot, x.team_idx); });
+    /* replay anything still queued offline so the board never appears to lose it */
     pending.forEach(p=>{
-      if(!m[p.round])m[p.round]={};
-      if(!m[p.round][p.slot])m[p.round][p.slot]=[];
-      const a=m[p.round][p.slot], i=a.indexOf(p.team);
-      if(p.add && i<0) a.push(p.team);
-      if(!p.add && i>=0) a.splice(i,1);
+      drop(m,p.round,p.slot,p.team); drop(wr,p.round,p.slot,p.team);
+      if(p.add) put(p.val===0?wr:m, p.round,p.slot,p.team);
     });
-    S.marks=m; return true;
+    S.marks=m; S.wrong=wr; return true;
   }catch(e){ setDot('err'); return false; }
 }
 
@@ -2200,7 +2220,7 @@ function setSecond(t){
   pushSecond();
 }
 function audPayload(){
-  return {type:'picpa2', teams:S.teams, marks:S.marks, used:S.used, cat:S.cat, slot:S.slot,
+  return {type:'picpa2', teams:S.teams, marks:S.marks, wrong:S.wrong, used:S.used, cat:S.cat, slot:S.slot,
           screen:(audTarget==='mirror'? S.screen : audTarget),
           revealed:revealed, spView:spView, spIdx:spIdx,
           timerLeft:timerLeft, timerMax:timerMax, snd:soundOn, mecIdx:mecIdx, cfgV:cfgVer};
@@ -2247,14 +2267,14 @@ function applyAud(d){
 
   // only redraw when something meaningful actually changed (stops the flicker)
   const sig=JSON.stringify([d.screen,d.cat,d.slot,d.revealed,d.spView,d.spIdx,d.mecIdx,
-                            d.teams,d.marks,d.used]);
+                            d.teams,d.marks,d.wrong,d.used]);
   if(sig===_audSig){
     if(S.screen==='sc-question') updTimer();   // tick the number only
     return;
   }
   _audSig=sig;
 
-  S.teams=d.teams||S.teams; S.marks=d.marks||S.marks; S.used=d.used||S.used;
+  S.teams=d.teams||S.teams; S.marks=d.marks||S.marks; S.wrong=d.wrong||S.wrong; S.used=d.used||S.used;
   if(d.cat&&d.cat!==S.cat) paintCat(d.cat);
   S.slot=(typeof d.slot==='number')?d.slot:-1;
   const mecChanged=(typeof d.mecIdx==='number'&&d.mecIdx!==mecIdx);
