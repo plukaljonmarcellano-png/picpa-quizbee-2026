@@ -37,6 +37,39 @@ body.hudon .screen{height:calc(100vh - var(--hudh,46px));}
 .rnd-chip b{font-family:'Bebas Neue',sans-serif;letter-spacing:1.5px;font-size:16px;}
 .idle-meta{margin-top:16px;font-size:12px;color:rgba(255,255,255,.35);letter-spacing:1.5px;text-align:center;line-height:1.9;}
 
+/* SCORESHEET — the paper grid, live */
+#sc-sheet{align-items:center;justify-content:flex-start;background:radial-gradient(ellipse at 50% 0%,#1a2e47,var(--navy) 70%);}
+.sh-head{text-align:center;padding-top:clamp(8px,1.6vh,18px);}
+.sh-round{font-family:'Bebas Neue',sans-serif;font-size:clamp(24px,3.4vw,48px);letter-spacing:3px;line-height:1.05;}
+.sh-sub{font-size:clamp(10px,1.1vw,14px);font-weight:600;letter-spacing:2.6px;text-transform:uppercase;
+  color:rgba(255,255,255,.42);margin-top:6px;}
+.sh-wrap{width:100%;flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:clamp(8px,1.6vh,18px) 14px;}
+table.sh{border-collapse:separate;border-spacing:0;margin:auto;}
+table.sh th,table.sh td{border-bottom:1px solid rgba(255,255,255,.09);border-right:1px solid rgba(255,255,255,.07);}
+table.sh thead th{position:sticky;top:0;z-index:2;background:var(--navy2);
+  font-family:'Bebas Neue',sans-serif;font-size:clamp(14px,1.6vw,24px);letter-spacing:1.4px;
+  color:rgba(255,255,255,.60);padding:9px 0;min-width:clamp(38px,3.4vw,62px);text-align:center;}
+table.sh thead th.tm{text-align:left;padding-left:14px;min-width:clamp(120px,13vw,240px);color:var(--gold);}
+table.sh thead th.tot{color:var(--gold);min-width:clamp(58px,5vw,96px);}
+table.sh td.tm{text-align:left;padding:0 14px;font-size:clamp(12px,1.35vw,21px);font-weight:700;
+  color:rgba(255,255,255,.90);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  max-width:clamp(120px,13vw,240px);}
+table.sh td.cell{text-align:center;font-size:clamp(15px,1.8vw,28px);font-weight:800;line-height:1;
+  height:clamp(30px,4.2vh,48px);}
+table.sh td.cell.ok{color:#2ECC71;background:rgba(39,174,96,.10);}
+table.sh td.cell.no{color:rgba(192,57,43,.75);background:rgba(192,57,43,.06);}
+table.sh td.cell.pend{color:rgba(255,255,255,.13);}
+table.sh td.cell.live{box-shadow:inset 0 0 0 2px var(--gold);}
+table.sh tbody tr:nth-child(even) td{background-image:linear-gradient(rgba(255,255,255,.022),rgba(255,255,255,.022));}
+table.sh tbody tr.lead td.tm{color:var(--gold);}
+table.sh td.tot{text-align:center;font-family:'Bebas Neue',sans-serif;font-size:clamp(18px,2.2vw,34px);
+  color:var(--gold);letter-spacing:1px;}
+table.sh td.gt{text-align:center;font-size:clamp(12px,1.3vw,20px);font-weight:700;color:rgba(255,255,255,.50);}
+body.editable table.sh td.cell{cursor:pointer;transition:background .12s;}
+body.editable table.sh td.cell:hover{background:rgba(201,162,39,.20);box-shadow:inset 0 0 0 2px rgba(201,162,39,.55);}
+.sh-foot{padding:0 0 clamp(8px,1.4vh,16px);font-size:clamp(9px,1vw,13px);letter-spacing:2.2px;
+  text-transform:uppercase;color:rgba(255,255,255,.30);text-align:center;}
+
 /* MECHANICS */
 #sc-mech{align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 25%,#1a2e47,var(--navy) 72%);}
 .mec-wrap{width:min(1500px,92vw);display:flex;flex-direction:column;align-items:center;}
@@ -617,6 +650,16 @@ table.rt tr.win td{background:#FFF2C2 !important;font-weight:800;}
   </div>
 </div>
 
+<!-- SCORESHEET -->
+<div class="screen" id="sc-sheet">
+  <div class="sh-head">
+    <div class="sh-round" id="sh-round">EASY ROUND</div>
+    <div class="sh-sub" id="sh-sub">&nbsp;</div>
+  </div>
+  <div class="sh-wrap"><table class="sh" id="sh-table"></table></div>
+  <div class="sh-foot" id="sh-foot">&nbsp;</div>
+</div>
+
 <!-- MECHANICS -->
 <div class="screen" id="sc-mech">
   <div class="mec-wrap">
@@ -653,6 +696,7 @@ table.rt tr.win td{background:#FFF2C2 !important;font-weight:800;}
         <button class="sgb" data-s="sc-grid"     onclick="go('sc-grid')">Quiz</button>
         <button class="sgb" data-s="sc-sponsors" onclick="go('sc-sponsors')">Sponsors</button>
         <button class="sgb" data-s="sc-tab"      onclick="go('sc-tab')">Standings</button>
+        <button class="sgb" data-s="sc-sheet"   onclick="go('sc-sheet')">Scoresheet</button>
         <button class="sgb" data-s="sc-winner"   onclick="showChampion()">Champion</button>
       </div>
     </div>
@@ -720,6 +764,7 @@ table.rt tr.win td{background:#FFF2C2 !important;font-weight:800;}
         <button class="sgb s2b" data-t="sc-question"    onclick="setSecond('sc-question')">Question</button>
         <button class="sgb s2b" data-t="sc-sponsors"    onclick="setSecond('sc-sponsors')">Sponsors</button>
         <button class="sgb s2b" data-t="sc-tab"         onclick="setSecond('sc-tab')">Standings</button>
+        <button class="sgb s2b" data-t="sc-sheet"       onclick="setSecond('sc-sheet')">Scoresheet</button>
         <button class="sgb s2b" data-t="sc-winner"      onclick="setSecond('sc-winner')">Champion</button>
         <button class="sgb s2b" data-t="sc-mech"        onclick="setSecond('sc-mech')">Mechanics</button>
         <button class="sgb s2b" data-t="sc-idle"        onclick="setSecond('sc-idle')">Logo</button>
@@ -966,6 +1011,7 @@ function go(id,push=true){
   if(id!=='sc-sponsors' && !(audWin && !audWin.closed && (audTarget==='sc-sponsors'||audTarget==='mirror'&&id==='sc-sponsors'))) stopSpAuto();
   if(id==='sc-sponsors'){ renderSponsors(); }
   if(id==='sc-mech'){ renderMech(); }
+  if(id==='sc-sheet'){ renderSheet(); }
   if(id==='sc-tab'){ renderTab(); }
   if(id==='sc-winner'){ startConfetti(); }
   if(push) sync();
@@ -983,6 +1029,7 @@ function setCat(c,push=true){ setTimeout(hudCtx,0);
     e.innerHTML=m.label+' <span class="pts">'+m.ptsLbl+'</span>';
     e.style.color=m.color;e.style.borderColor=m.border;e.style.background=m.bg;});
   updTimer(); renderGrid();
+  if(S.screen==='sc-sheet') renderSheet();
   if(push){ go('sc-grid',false); sync(); }
 }
 
@@ -1058,6 +1105,7 @@ function toggleMark(ti){
   if(add)a.push(ti); else a.splice(p,1);
   markPush(r,k,ti,add);                 // granular: never clobbers the other laptop
   if(MODE==='tab') renderScorer(); else { renderTeamBtns(); renderTab(); updNextLabel(); }
+  if(S.screen==='sc-sheet') renderSheet();
 }
 
 /* ═══ TIMER ═══ */
@@ -1451,6 +1499,76 @@ function stopSpAuto(){ spAuto=false; clearInterval(spTimer);
    real one above: it drove the Command Center only and never reached the 2nd
    screen or the cloud. Removed. */
 
+/* ═══ LIVE SCORESHEET ═══════════════════════════════════════════════
+   The paper grid, live: teams down the side, questions across the top.
+   Editable on the Command Center and the tabulator laptop; strictly
+   read-only on the projector / 2nd screen so a stray touch can't score. */
+function sheetEditable(){ return !IS_CHILD && (MODE==='cc'||MODE==='tab'); }
+
+function renderSheet(){
+  const t=document.getElementById('sh-table'); if(!t)return;
+  const r=S.cat, m=CAT_META[r], bank=BANKS[r]||[], marks=S.marks[r]||{}, used=S.used[r]||[];
+  const n=bank.length;
+
+  const hr=document.getElementById('sh-round');
+  hr.textContent=m.label.toUpperCase()+' ROUND';
+  hr.style.color=m.color;
+  document.getElementById('sh-sub').textContent=
+    m.ptsLbl+' per correct answer  ·  '+used.length+' of '+n+' questions played';
+
+  const rows=S.teams.map((name,idx)=>({idx,name})).filter(x=>x.name&&x.name.trim());
+  const best=Math.max(0,...rows.map(x=>roundScore(r,x.idx)));
+
+  let h='<thead><tr><th class="tm">Team</th>';
+  for(let i=0;i<n;i++) h+='<th'+(i===S.slot?' style="color:var(--gold)"':'')+'>'+(i+1)+'</th>';
+  h+='<th class="tot">'+(r==='clincher'?'WINS':'PTS')+'</th><th class="tot">TOTAL</th></tr></thead><tbody>';
+
+  rows.forEach(row=>{
+    const sc=roundScore(r,row.idx);
+    h+='<tr'+(sc>0&&sc===best?' class="lead"':'')+'>';
+    h+='<td class="tm" title="'+esc(row.name)+'">'+esc(row.name)+'</td>';
+    for(let i=0;i<n;i++){
+      const got=(marks[i]||[]).includes(row.idx);
+      const played=used.includes(i)||(marks[i]&&marks[i].length);
+      const cls=got?'ok':(played?'no':'pend');
+      const mark=got?'✓':(played?'✗':'·');
+      h+='<td class="cell '+cls+(i===S.slot?' live':'')+'" data-t="'+row.idx+'" data-q="'+i+'">'+mark+'</td>';
+    }
+    h+='<td class="tot">'+sc+'</td><td class="gt">'+totalScore(row.idx)+'</td>';
+    h+='</tr>';
+  });
+  h+='</tbody>';
+  t.innerHTML=h;
+
+  const ed=sheetEditable();
+  document.body.classList.toggle('editable',ed);
+  if(ed) t.querySelectorAll('td.cell').forEach(c=>{
+    c.onclick=()=>sheetToggle(parseInt(c.dataset.q,10), parseInt(c.dataset.t,10));
+  });
+  document.getElementById('sh-foot').textContent = ed
+    ? 'Click any cell to mark correct / incorrect — changes sync to both laptops and the projector'
+    : '✓ correct   ✗ incorrect   ·  not yet played';
+}
+
+/* Toggle one cell. Uses the same granular per-mark write as the scorer strip,
+   so two people editing different cells never overwrite each other. */
+function sheetToggle(slot,ti){
+  if(!sheetEditable())return;
+  const r=S.cat;
+  if(!S.marks[r])S.marks[r]={};
+  if(!S.marks[r][slot])S.marks[r][slot]=[];
+  const a=S.marks[r][slot], p=a.indexOf(ti), add=(p<0);
+  if(add)a.push(ti); else a.splice(p,1);
+  /* Marking a question the Command Center never opened counts it as played, so
+     the grid and the results PDF agree. Only the CC may do this: `used` travels
+     in the flow row, which the CC owns — a tabulator writing it locally would be
+     silently overwritten on the next poll. The mark itself still records either way. */
+  if(add && MODE==='cc' && !(S.used[r]||[]).includes(slot)){ (S.used[r]=S.used[r]||[]).push(slot); }
+  markPush(r,slot,ti,add);
+  renderSheet(); renderTab();
+  if(MODE==='cc'){ renderGrid(); renderTeamBtns(); updNextLabel(); sync(); }
+}
+
 /* ═══ TABULATION ═══ */
 function renderTab(target){
   const rk=rankings();
@@ -1659,6 +1777,7 @@ async function cloudPull(){
       if(tgt&&tgt!==S.screen){ go(tgt,false); }
       else if(tgt==='sc-sponsors') renderSponsors();
       else if(tgt==='sc-mech') renderMech();
+      else if(tgt==='sc-sheet') renderSheet();
     }
     renderTab();
     pulling=false; return;
@@ -1674,9 +1793,10 @@ async function cloudPull(){
         if(changed) syncManualSelectors();
       }
     }
-    renderScorer();
+    renderScorer(); if(S.screen==='sc-sheet') renderSheet();
   }else{
     renderTab(); renderTeamBtns(); renderGrid(); updNextLabel();
+    if(S.screen==='sc-sheet') renderSheet();
     pushSecond();          // relay tabulator's scores to the 2nd screen window
   }
   pulling=false;
@@ -1855,6 +1975,7 @@ function applyAud(d){
     updTimer();
   }
   if(scr==='sc-tab') renderTab();
+  if(scr==='sc-sheet') renderSheet();
   if(scr==='sc-grid'&&!screenChanged) renderGrid();
   if(scr==='sc-mech'&&!screenChanged&&mecChanged) renderMech();
   if(scr==='sc-sponsors'&&!screenChanged){
@@ -2107,6 +2228,7 @@ document.addEventListener('keydown',e=>{
     case 'o': case 'O': if(S.screen==='sc-sponsors') toggleSpot(); break;
     case 'k': case 'K': go('sc-mech'); break;
     case 'g': case 'G': if(MODE==='cc') cfgOpen(); break;
+    case 's': case 'S': go('sc-sheet'); break;
     case 'ArrowRight': if(S.screen==='sc-mech'){ e.preventDefault(); mecStep(1); } break;
     case 'ArrowLeft':  if(S.screen==='sc-mech'){ e.preventDefault(); mecStep(-1); } break;
     case 'm': case 'M': switchMode(); break;
