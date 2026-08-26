@@ -37,38 +37,96 @@ body.hudon .screen{height:calc(100vh - var(--hudh,46px));}
 .rnd-chip b{font-family:'Bebas Neue',sans-serif;letter-spacing:1.5px;font-size:16px;}
 .idle-meta{margin-top:16px;font-size:12px;color:rgba(255,255,255,.35);letter-spacing:1.5px;text-align:center;line-height:1.9;}
 
-/* SCORESHEET — the paper grid, live */
-#sc-sheet{align-items:center;justify-content:flex-start;background:radial-gradient(ellipse at 50% 0%,#1a2e47,var(--navy) 70%);}
-.sh-head{text-align:center;padding-top:clamp(8px,1.6vh,18px);}
-.sh-round{font-family:'Bebas Neue',sans-serif;font-size:clamp(24px,3.4vw,48px);letter-spacing:3px;line-height:1.05;}
-.sh-sub{font-size:clamp(10px,1.1vw,14px);font-weight:600;letter-spacing:2.6px;text-transform:uppercase;
-  color:rgba(255,255,255,.42);margin-top:6px;}
-.sh-wrap{width:100%;flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:clamp(8px,1.6vh,18px) 14px;}
-table.sh{border-collapse:separate;border-spacing:0;margin:auto;}
-table.sh th,table.sh td{border-bottom:1px solid rgba(255,255,255,.09);border-right:1px solid rgba(255,255,255,.07);}
-table.sh thead th{position:sticky;top:0;z-index:2;background:var(--navy2);
-  font-family:'Bebas Neue',sans-serif;font-size:clamp(14px,1.6vw,24px);letter-spacing:1.4px;
-  color:rgba(255,255,255,.60);padding:9px 0;min-width:clamp(38px,3.4vw,62px);text-align:center;}
-table.sh thead th.tm{text-align:left;padding-left:14px;min-width:clamp(120px,13vw,240px);color:var(--gold);}
-table.sh thead th.tot{color:var(--gold);min-width:clamp(58px,5vw,96px);}
-table.sh td.tm{text-align:left;padding:0 14px;font-size:clamp(12px,1.35vw,21px);font-weight:700;
-  color:rgba(255,255,255,.90);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  max-width:clamp(120px,13vw,240px);}
-table.sh td.cell{text-align:center;font-size:clamp(15px,1.8vw,28px);font-weight:800;line-height:1;
-  height:clamp(30px,4.2vh,48px);}
-table.sh td.cell.ok{color:#2ECC71;background:rgba(39,174,96,.10);}
-table.sh td.cell.no{color:rgba(192,57,43,.75);background:rgba(192,57,43,.06);}
-table.sh td.cell.pend{color:rgba(255,255,255,.13);}
-table.sh td.cell.live{box-shadow:inset 0 0 0 2px var(--gold);}
-table.sh tbody tr:nth-child(even) td{background-image:linear-gradient(rgba(255,255,255,.022),rgba(255,255,255,.022));}
-table.sh tbody tr.lead td.tm{color:var(--gold);}
-table.sh td.tot{text-align:center;font-family:'Bebas Neue',sans-serif;font-size:clamp(18px,2.2vw,34px);
-  color:var(--gold);letter-spacing:1px;}
-table.sh td.gt{text-align:center;font-size:clamp(12px,1.3vw,20px);font-weight:700;color:rgba(255,255,255,.50);}
-body.editable table.sh td.cell{cursor:pointer;transition:background .12s;}
-body.editable table.sh td.cell:hover{background:rgba(201,162,39,.20);box-shadow:inset 0 0 0 2px rgba(201,162,39,.55);}
-.sh-foot{padding:0 0 clamp(8px,1.4vh,16px);font-size:clamp(9px,1vw,13px);letter-spacing:2.2px;
-  text-transform:uppercase;color:rgba(255,255,255,.30);text-align:center;}
+/* SCORESHEET — broadcast scoreboard */
+#sc-sheet{align-items:center;justify-content:center;padding:0;
+  background:radial-gradient(ellipse 120% 80% at 50% -10%,rgba(255,255,255,.05),transparent 60%),
+             radial-gradient(ellipse at 50% 40%,#16283e,var(--navy) 72%);}
+.sh-stage{width:auto;max-width:96vw;display:flex;flex-direction:column;align-items:stretch;
+  height:100%;padding:clamp(10px,2vh,26px) 0 clamp(6px,1.2vh,14px);}
+
+/* header */
+.sh-top{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;
+  padding:0 clamp(6px,1vw,16px) clamp(8px,1.4vh,16px);}
+.sh-id{display:flex;align-items:center;gap:clamp(10px,1.2vw,18px);min-width:0;}
+.sh-bar{width:clamp(5px,.42vw,8px);align-self:stretch;border-radius:4px;min-height:clamp(36px,5vh,62px);
+  box-shadow:0 0 22px currentColor;}
+.sh-titles{min-width:0;}
+.sh-kick{font-size:clamp(9px,.92vw,12px);font-weight:800;letter-spacing:4px;text-transform:uppercase;
+  color:rgba(255,255,255,.34);}
+.sh-round{font-family:'Bebas Neue',sans-serif;font-size:clamp(28px,3.9vw,60px);letter-spacing:2.5px;
+  line-height:1;margin-top:3px;}
+.sh-meta{display:flex;align-items:center;gap:clamp(10px,1.4vw,22px);flex:none;}
+.sh-stat{text-align:right;}
+.sh-stat .v{font-family:'Bebas Neue',sans-serif;font-size:clamp(22px,2.6vw,40px);line-height:1;color:var(--gold);}
+.sh-stat .k{font-size:clamp(8px,.82vw,11px);font-weight:700;letter-spacing:2.4px;text-transform:uppercase;
+  color:rgba(255,255,255,.34);margin-top:4px;}
+.sh-prog{display:flex;gap:4px;align-items:center;}
+.sh-prog i{width:clamp(11px,1.05vw,18px);height:clamp(5px,.42vw,7px);border-radius:3px;
+  background:rgba(255,255,255,.13);transition:background .25s;}
+.sh-prog i.done{background:currentColor;box-shadow:0 0 10px currentColor;}
+.sh-prog i.live{background:var(--gold);box-shadow:0 0 12px var(--gold);}
+
+/* shared column geometry */
+.sh-grid{--rank:clamp(34px,2.9vw,52px);--name:clamp(132px,15vw,280px);align-self:center;
+  --q:clamp(30px,3.3vw,66px);--pts:clamp(56px,5vw,104px);--tot:clamp(46px,4vw,84px);
+  display:flex;flex-direction:column;gap:clamp(3px,.55vh,7px);flex:1;min-height:0;
+  padding:0 clamp(6px,1vw,16px);}
+.sh-row{display:flex;align-items:stretch;gap:clamp(3px,.34vw,6px);}
+.sh-row>*{flex:none;display:flex;align-items:center;justify-content:center;min-width:0;}
+.sh-c-rank{width:var(--rank);}
+.sh-c-name{flex:1 1 auto;min-width:var(--name);max-width:clamp(150px,19vw,360px);justify-content:flex-start;}
+.sh-c-q{width:var(--q);} .sh-c-pts{width:var(--pts);} .sh-c-tot{width:var(--tot);}
+
+/* column headers */
+.sh-head-row{padding-bottom:clamp(2px,.5vh,6px);}
+.sh-head-row>*{font-size:clamp(9px,.88vw,13px);font-weight:800;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(255,255,255,.30);}
+.sh-head-row .sh-c-q{font-family:'Bebas Neue',sans-serif;font-size:clamp(13px,1.35vw,21px);letter-spacing:1px;
+  color:rgba(255,255,255,.42);}
+.sh-head-row .sh-c-q.live{color:var(--navy);background:var(--gold);border-radius:7px;
+  box-shadow:0 0 20px rgba(201,162,39,.55);}
+.sh-head-row .sh-c-pts,.sh-head-row .sh-c-tot{color:var(--gold);}
+
+/* team lanes */
+.sh-lane{flex:1 1 0;min-height:0;border-radius:11px;
+  background:linear-gradient(90deg,rgba(255,255,255,.055),rgba(255,255,255,.022) 42%,rgba(255,255,255,.012));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);position:relative;overflow:hidden;}
+.sh-lane.top{background:linear-gradient(90deg,rgba(201,162,39,.20),rgba(201,162,39,.06) 46%,rgba(201,162,39,.02));
+  box-shadow:inset 0 0 0 1px rgba(201,162,39,.36),0 4px 20px rgba(0,0,0,.28);}
+.sh-lane .sh-c-rank{font-family:'Bebas Neue',sans-serif;font-size:clamp(15px,1.7vw,28px);
+  color:rgba(255,255,255,.34);letter-spacing:1px;}
+.sh-lane.m1 .sh-c-rank{color:#F4D76A;} .sh-lane.m2 .sh-c-rank{color:#CFD6DD;} .sh-lane.m3 .sh-c-rank{color:#D08B5B;}
+.sh-nm{font-size:clamp(12px,1.35vw,23px);font-weight:700;letter-spacing:.4px;color:rgba(255,255,255,.93);
+  padding-left:clamp(8px,.8vw,14px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;}
+.sh-lane.top .sh-nm{color:#F6E4A8;}
+
+/* mark chips */
+.sh-chip{width:clamp(19px,2.1vw,38px);height:clamp(19px,2.1vw,38px);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:clamp(10px,1.2vw,21px);
+  font-weight:900;line-height:1;transition:transform .16s,box-shadow .16s;}
+.sh-chip.ok{background:linear-gradient(160deg,#2ECC71,#1E8449);color:#062b16;
+  box-shadow:0 0 16px rgba(46,204,113,.45),inset 0 1px 0 rgba(255,255,255,.35);}
+.sh-chip.no{background:rgba(192,57,43,.13);color:rgba(231,120,110,.85);
+  box-shadow:inset 0 0 0 1.5px rgba(192,57,43,.34);}
+.sh-chip.pend{width:clamp(4px,.42vw,7px);height:clamp(4px,.42vw,7px);background:rgba(255,255,255,.16);
+  box-shadow:none;}
+.sh-c-q.live .sh-chip{transform:scale(1.10);}
+.sh-c-q.live{background:rgba(201,162,39,.10);border-radius:9px;}
+@keyframes chippop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.18)}100%{transform:scale(1);opacity:1}}
+.sh-chip.pop{animation:chippop .30s cubic-bezier(.34,1.56,.64,1);}
+
+/* score columns */
+.sh-pts{font-family:'Bebas Neue',sans-serif;font-size:clamp(19px,2.3vw,38px);line-height:1;color:var(--gold);
+  letter-spacing:1px;}
+.sh-lane.top .sh-pts{text-shadow:0 0 22px rgba(201,162,39,.55);}
+.sh-tot{font-size:clamp(11px,1.15vw,19px);font-weight:800;color:rgba(255,255,255,.46);}
+
+body.editable .sh-c-q{cursor:pointer;border-radius:9px;}
+body.editable .sh-c-q:hover{background:rgba(201,162,39,.22);}
+body.editable .sh-c-q:hover .sh-chip{transform:scale(1.16);}
+
+.sh-foot{text-align:center;font-size:clamp(8px,.88vw,12px);letter-spacing:2.6px;text-transform:uppercase;
+  color:rgba(255,255,255,.26);padding-top:clamp(9px,1.7vh,20px);}
 
 /* MECHANICS */
 #sc-mech{align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 25%,#1a2e47,var(--navy) 72%);}
@@ -652,12 +710,24 @@ table.rt tr.win td{background:#FFF2C2 !important;font-weight:800;}
 
 <!-- SCORESHEET -->
 <div class="screen" id="sc-sheet">
-  <div class="sh-head">
-    <div class="sh-round" id="sh-round">EASY ROUND</div>
-    <div class="sh-sub" id="sh-sub">&nbsp;</div>
+  <div class="sh-stage">
+    <div class="sh-top">
+      <div class="sh-id">
+        <div class="sh-bar" id="sh-bar"></div>
+        <div class="sh-titles">
+          <div class="sh-kick">Live Scoresheet</div>
+          <div class="sh-round" id="sh-round">EASY ROUND</div>
+        </div>
+      </div>
+      <div class="sh-meta">
+        <div class="sh-prog" id="sh-prog"></div>
+        <div class="sh-stat"><div class="v" id="sh-played">0/0</div><div class="k">Questions</div></div>
+        <div class="sh-stat"><div class="v" id="sh-worth">1 pt</div><div class="k">Per Correct</div></div>
+      </div>
+    </div>
+    <div class="sh-grid" id="sh-grid"></div>
+    <div class="sh-foot" id="sh-foot">&nbsp;</div>
   </div>
-  <div class="sh-wrap"><table class="sh" id="sh-table"></table></div>
-  <div class="sh-foot" id="sh-foot">&nbsp;</div>
 </div>
 
 <!-- MECHANICS -->
@@ -1506,48 +1576,61 @@ function stopSpAuto(){ spAuto=false; clearInterval(spTimer);
 function sheetEditable(){ return !IS_CHILD && (MODE==='cc'||MODE==='tab'); }
 
 function renderSheet(){
-  const t=document.getElementById('sh-table'); if(!t)return;
+  const g=document.getElementById('sh-grid'); if(!g)return;
   const r=S.cat, m=CAT_META[r], bank=BANKS[r]||[], marks=S.marks[r]||{}, used=S.used[r]||[];
   const n=bank.length;
 
   const hr=document.getElementById('sh-round');
-  hr.textContent=m.label.toUpperCase()+' ROUND';
-  hr.style.color=m.color;
-  document.getElementById('sh-sub').textContent=
-    m.ptsLbl+' per correct answer  ·  '+used.length+' of '+n+' questions played';
+  hr.textContent=m.label.toUpperCase()+' ROUND'; hr.style.color=m.color;
+  document.getElementById('sh-bar').style.background=m.color;
+  document.getElementById('sh-bar').style.color=m.color;
+  document.getElementById('sh-played').textContent=used.length+'/'+n;
+  document.getElementById('sh-worth').textContent=m.ptsLbl;
 
-  const rows=S.teams.map((name,idx)=>({idx,name})).filter(x=>x.name&&x.name.trim());
-  const best=Math.max(0,...rows.map(x=>roundScore(r,x.idx)));
+  const pr=document.getElementById('sh-prog'); pr.style.color=m.color;
+  pr.innerHTML=Array.from({length:n},(_,i)=>
+    '<i class="'+(i===S.slot?'live':(used.includes(i)?'done':''))+'"></i>').join('');
 
-  let h='<thead><tr><th class="tm">Team</th>';
-  for(let i=0;i<n;i++) h+='<th'+(i===S.slot?' style="color:var(--gold)"':'')+'>'+(i+1)+'</th>';
-  h+='<th class="tot">'+(r==='clincher'?'WINS':'PTS')+'</th><th class="tot">TOTAL</th></tr></thead><tbody>';
+  /* rank by this round's score, then by overall — the board reads like a leaderboard */
+  const rows=S.teams.map((name,idx)=>({idx,name,sc:roundScore(r,idx),tot:totalScore(idx)}))
+    .filter(x=>x.name&&x.name.trim())
+    .sort((a,b)=> b.sc-a.sc || b.tot-a.tot || a.idx-b.idx);
+  let rk=0,last=null;
+  rows.forEach((x,i)=>{ if(x.sc!==last){rk=i+1;last=x.sc;} x.rank=rk; });
+  const anyScore=rows.some(x=>x.sc>0);
+
+  let h='<div class="sh-row sh-head-row">'+
+        '<div class="sh-c-rank">#</div><div class="sh-c-name" style="padding-left:'+
+        'clamp(8px,.8vw,14px)">Team</div>';
+  for(let i=0;i<n;i++) h+='<div class="sh-c-q'+(i===S.slot?' live':'')+'">'+(i+1)+'</div>';
+  h+='<div class="sh-c-pts">'+(r==='clincher'?'Wins':'Pts')+'</div><div class="sh-c-tot">Total</div></div>';
 
   rows.forEach(row=>{
-    const sc=roundScore(r,row.idx);
-    h+='<tr'+(sc>0&&sc===best?' class="lead"':'')+'>';
-    h+='<td class="tm" title="'+esc(row.name)+'">'+esc(row.name)+'</td>';
+    const medal=anyScore&&row.sc>0&&row.rank<=3?(' m'+row.rank):'';
+    h+='<div class="sh-row sh-lane'+(anyScore&&row.rank===1&&row.sc>0?' top':'')+medal+'">';
+    h+='<div class="sh-c-rank">'+(anyScore&&row.sc>0?row.rank:'&nbsp;')+'</div>';
+    h+='<div class="sh-c-name"><div class="sh-nm" title="'+esc(row.name)+'">'+esc(row.name)+'</div></div>';
     for(let i=0;i<n;i++){
       const got=(marks[i]||[]).includes(row.idx);
       const played=used.includes(i)||(marks[i]&&marks[i].length);
       const cls=got?'ok':(played?'no':'pend');
-      const mark=got?'✓':(played?'✗':'·');
-      h+='<td class="cell '+cls+(i===S.slot?' live':'')+'" data-t="'+row.idx+'" data-q="'+i+'">'+mark+'</td>';
+      const gl=got?'✓':(played?'✗':'');
+      h+='<div class="sh-c-q'+(i===S.slot?' live':'')+'" data-t="'+row.idx+'" data-q="'+i+'">'+
+         '<span class="sh-chip '+cls+'">'+gl+'</span></div>';
     }
-    h+='<td class="tot">'+sc+'</td><td class="gt">'+totalScore(row.idx)+'</td>';
-    h+='</tr>';
+    h+='<div class="sh-c-pts"><span class="sh-pts">'+row.sc+'</span></div>'+
+       '<div class="sh-c-tot"><span class="sh-tot">'+row.tot+'</span></div></div>';
   });
-  h+='</tbody>';
-  t.innerHTML=h;
+  g.innerHTML=h;
 
   const ed=sheetEditable();
   document.body.classList.toggle('editable',ed);
-  if(ed) t.querySelectorAll('td.cell').forEach(c=>{
+  if(ed) g.querySelectorAll('.sh-c-q[data-q]').forEach(c=>{
     c.onclick=()=>sheetToggle(parseInt(c.dataset.q,10), parseInt(c.dataset.t,10));
   });
   document.getElementById('sh-foot').textContent = ed
-    ? 'Click any cell to mark correct / incorrect — changes sync to both laptops and the projector'
-    : '✓ correct   ✗ incorrect   ·  not yet played';
+    ? 'Click any cell to mark correct or incorrect — syncs to both laptops and the projector'
+    : '✓ correct     ✗ incorrect     · not yet played';
 }
 
 /* Toggle one cell. Uses the same granular per-mark write as the scorer strip,
@@ -1566,6 +1649,8 @@ function sheetToggle(slot,ti){
   if(add && MODE==='cc' && !(S.used[r]||[]).includes(slot)){ (S.used[r]=S.used[r]||[]).push(slot); }
   markPush(r,slot,ti,add);
   renderSheet(); renderTab();
+  const c=document.querySelector('.sh-c-q[data-t="'+ti+'"][data-q="'+slot+'"] .sh-chip');
+  if(c){ c.classList.add('pop'); setTimeout(()=>c.classList.remove('pop'),340); }
   if(MODE==='cc'){ renderGrid(); renderTeamBtns(); updNextLabel(); sync(); }
 }
 
