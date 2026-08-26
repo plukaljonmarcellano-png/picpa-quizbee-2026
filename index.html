@@ -176,6 +176,10 @@ body.child .sh-rail,body.audience .sh-rail{display:none;}
 .sh-chip.ok{background:#2E7D32;color:#fff;box-shadow:0 2px 7px rgba(46,125,50,.45);}
 .sh-chip.no{background:#FFCDD2;color:#C62828;box-shadow:inset 0 0 0 2px rgba(198,40,40,.45);}
 .sh-chip.pend{width:clamp(4px,.42vw,7px);height:clamp(4px,.42vw,7px);background:#C9CDD4;box-shadow:none;}
+/* question played, but no judgement recorded for this team — neutral, never accusatory */
+.sh-chip.none{width:auto;height:auto;background:none;box-shadow:none;color:#AEB4BE;
+  font-size:clamp(13px,1.5vw,26px);font-weight:700;line-height:1;}
+.sh-chip.none::before{content:'–';}
 .sh-c-q.live .sh-chip{transform:scale(1.10);}
 .sh-c-q.live{background:rgba(201,162,39,.22);border-radius:8px;}
 @keyframes chippop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.18)}100%{transform:scale(1);opacity:1}}
@@ -644,6 +648,8 @@ body.child #sc-sheet .sh-chip,body.audience #sc-sheet .sh-chip{
   width:clamp(22px,2.6vw,46px);height:clamp(22px,2.6vw,46px);font-size:clamp(12px,1.45vw,26px);}
 body.child #sc-sheet .sh-chip.pend,body.audience #sc-sheet .sh-chip.pend{
   width:clamp(5px,.55vw,9px);height:clamp(5px,.55vw,9px);}
+body.child #sc-sheet .sh-chip.none,body.audience #sc-sheet .sh-chip.none{
+  width:auto;height:auto;font-size:clamp(15px,1.8vw,32px);}
 body.child #sc-sheet .sh-nm,body.audience #sc-sheet .sh-nm{font-size:clamp(14px,1.7vw,30px);}
 body.child #sc-sheet .sh-pts,body.audience #sc-sheet .sh-pts{font-size:clamp(22px,2.9vw,48px);}
 body.child #sc-sheet .sh-tot,body.audience #sc-sheet .sh-tot{font-size:clamp(12px,1.4vw,24px);}
@@ -1772,8 +1778,7 @@ function exportCSV(){
       const n=(BANKS[r]||[]).length, marks=S.marks[r]||{}, used=S.used[r]||[];
       for(let i=0;i<n;i++){
         const st=markState(r,i,ti);
-        const played=used.includes(i)||(marks[i]&&marks[i].length)||(((S.wrong[r]||{})[i]||[]).length);
-        row.push(st===1?1:((st===0||played)?0:''));
+        row.push(st===1?1:(st===0?0:''));     // blank = no judgement recorded
       }
       row.push(r==='clincher'?clincherWins(ti):roundScore(r,ti));
     });
@@ -1781,7 +1786,7 @@ function exportCSV(){
     rowsOut.push(row);
   });
   const meta=[['PICPA-WR Quiz Bee 2026 — Minds in Motion'],[EVENT_VENUE+'  ·  '+EVENT_DATE],
-              ['Exported '+nowStamp()],['1 = correct, 0 = incorrect, blank = not played'],[]];
+              ['Exported '+nowStamp()],['1 = judged correct, 0 = judged incorrect, blank = no judgement recorded'],[]];
   const csv=[...meta.map(r=>r.map(q).join(',')), head.map(q).join(','),
              ...rowsOut.map(r=>r.map(q).join(','))].join('\r\n');
   const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
@@ -1812,12 +1817,14 @@ function renderSheet(){
   pr.innerHTML=Array.from({length:n},(_,i)=>
     '<i class="'+(i===S.slot?'live':(used.includes(i)?'done':''))+'"></i>').join('');
 
-  /* rank by this round's score, then by overall — the board reads like a leaderboard */
+  /* Rank is computed from the scores, but the rows never move: each team keeps
+     its own line all night. Reordering mid-round makes the operator lose their
+     place and makes the audience watch rows leapfrog instead of reading scores. */
   const rows=S.teams.map((name,idx)=>({idx,name,sc:roundScore(r,idx),tot:totalScore(idx)}))
-    .filter(x=>x.name&&x.name.trim())
-    .sort((a,b)=> b.sc-a.sc || b.tot-a.tot || a.idx-b.idx);
+    .filter(x=>x.name&&x.name.trim());
+  const ranked=[...rows].sort((a,b)=> b.sc-a.sc || b.tot-a.tot || a.idx-b.idx);
   let rk=0,last=null;
-  rows.forEach((x,i)=>{ if(x.sc!==last){rk=i+1;last=x.sc;} x.rank=rk; });
+  ranked.forEach((x,i)=>{ if(x.sc!==last){rk=i+1;last=x.sc;} x.rank=rk; });
   const anyScore=rows.some(x=>x.sc>0);
 
   let h='<div class="sh-row sh-head-row">'+
@@ -1834,8 +1841,11 @@ function renderSheet(){
     for(let i=0;i<n;i++){
       const st=markState(r,i,row.idx);
       const played=used.includes(i)||(marks[i]&&marks[i].length)||((wrong[i]||[]).length);
-      const cls=st===1?'ok':((st===0||played)?'no':'pend');
-      const gl=st===1?'✓':((st===0||played)?'✗':'');
+      /* ✗ is shown ONLY where a judge recorded an incorrect answer. A played
+         question with no mark stays neutral — inferring "wrong" from silence
+         would accuse a team of something nobody ruled. */
+      const cls=st===1?'ok':(st===0?'no':(played?'none':'pend'));
+      const gl=st===1?'✓':(st===0?'✗':'');
       h+='<div class="sh-c-q'+(i===S.slot?' live':'')+'" data-t="'+row.idx+'" data-q="'+i+'">'+
          '<span class="sh-chip '+cls+'">'+gl+'</span></div>';
     }
@@ -1852,8 +1862,8 @@ function renderSheet(){
       if(qq!==S.slot) shSlot=qq; sheetToggle(qq, parseInt(c.dataset.t,10)); };
   });
   document.getElementById('sh-foot').textContent = ed
-    ? 'Click any cell to mark correct or incorrect — syncs to both laptops and the projector'
-    : '✓ correct     ✗ incorrect     · not yet played';
+    ? 'Click a cell to cycle correct → incorrect → no mark  ·  syncs to both laptops and the projector'
+    : '✓ judged correct     ✗ judged incorrect     · no mark recorded';
 }
 
 /* Toggle one cell. Uses the same granular per-mark write as the scorer strip,
