@@ -1345,7 +1345,7 @@ function go(id,push=true){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const el=document.getElementById(id); if(el) el.classList.add('active');
   S.screen=id;
-  if(id!=='sc-sponsors' && !(anySecond() && (audTarget==='sc-sponsors'||audTarget==='mirror'&&id==='sc-sponsors'))) stopSpAuto();
+  if(!spWanted(id)) stopSpAuto();
   if(id==='sc-sponsors'){ renderSponsors(); }
   if(id==='sc-mech'){ renderMech(); }
   if(id==='sc-sheet'){ renderSheet(); }
@@ -1869,6 +1869,19 @@ function paintSpot(){
   ct.textContent='Sponsor '+(spIdx+1)+' of '+SPONSORS.length;
   [sal,nm,og].forEach(e=>{if(!e)return; e.classList.remove('fadein'); void e.offsetWidth; e.classList.add('fadein');});
 }
+/* The sponsor reel is driven by a timer in the Command Center; the displays
+   only receive the index. So the timer must survive the CC navigating away —
+   otherwise the audience screen freezes on sponsor 1 while the quiz runs.
+   This asks every display, not just the 2nd one. */
+function spWanted(id){
+  id=id||S.screen;
+  if(id==='sc-sponsors') return true;                                  // CC itself
+  if(audWin&&!audWin.closed &&
+     (audTarget==='sc-sponsors' || (audTarget==='mirror'&&id==='sc-sponsors'))) return true;
+  if(audWin2&&!audWin2.closed && aud3Target==='sc-sponsors') return true;
+  return false;
+}
+function spReview(){ if(!spWanted()) stopSpAuto(); }
 function toggleSpot(){ spView = spView==='grid'?'spot':'grid'; if(spView==='grid') stopSpAuto(); renderSponsors(); sync(); }
 function spNext(d){ spView='spot'; spIdx+=d; renderSponsors(); sync(); }
 function toggleSpAuto(){ spAuto?stopSpAuto():startSpAuto(); }
@@ -2408,7 +2421,8 @@ function hudCtx(){
   const show={round:false,question:false,sponsors:false,second:false,mech:false,third:false};
   if(scr==='sc-grid'||scr==='sc-question') show.round=true;
   if(scr==='sc-question') show.question=true;
-  if(scr==='sc-sponsors') show.sponsors=true;
+  if(scr==='sc-sponsors' || (audWin2&&!audWin2.closed&&aud3Target==='sc-sponsors')
+     || (audWin&&!audWin.closed&&audTarget==='sc-sponsors')) show.sponsors=true;
   if(scr==='sc-mech') show.mech=true;
   if(audWin&&!audWin.closed) show.second=true;
   if(audWin2&&!audWin2.closed) show.third=true;
@@ -2516,6 +2530,7 @@ function closeSecond(n){
 }
 function secondClosed(n){
   if(n===3) audWin2=null; else audWin=null;
+  spReview();
   hudCtx();
   const b=document.getElementById(n===3?'b-open3':'b-open2');
   if(b) b.textContent = n===3?'🖥 3rd Screen':'🖥 2nd Screen';
@@ -2526,10 +2541,13 @@ function setSecond(t){
   pushSecond();
 }
 function setThird(t){
-  if(!AUD3_ALLOWED.includes(t)) return;          // scores only, by design
+  if(!AUD3_ALLOWED.includes(t)) return;          // whitelisted views only, by design
   aud3Target=t;
   document.querySelectorAll('.s3b').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
-  pushSecond();
+  /* An audience display left on Sponsors should cycle by itself — that is the
+     whole point of putting it there. Leaving Sponsors releases the timer. */
+  if(t==='sc-sponsors'){ if(!spAuto) startSpAuto(); } else { spReview(); }
+  hudCtx(); pushSecond();
 }
 function audPayload(withSound,forceScreen){
   return {type:'picpa2', teams:S.teams, tname:S.tname, marks:S.marks, wrong:S.wrong, used:S.used, cat:S.cat, slot:S.slot,
