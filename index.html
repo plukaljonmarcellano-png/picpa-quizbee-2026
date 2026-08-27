@@ -893,7 +893,7 @@ body.child #sc-sheet .sh-foot,body.audience #sc-sheet .sh-foot{padding-bottom:cl
       <button class="hicon on" id="b-sound" onclick="toggleSound()" title="Sound on/off (B)">🔊</button>
       <button class="hb" onclick="openM('m-res')" title="Official results PDF">📄 Results</button>
       <button class="hicon cc-only" onclick="cfgOpen()" title="Settings — questions &amp; timers">⚙</button>
-      <button class="hicon" onclick="openM('m-setup')" title="Teams &amp; scores">👥</button>
+      <button class="hicon cc-only" onclick="openM('m-setup')" title="Teams &amp; scores">👥</button>
       <button class="hicon" onclick="switchMode()" title="Change this device's role (M)">🔀</button>
       <button class="hicon" onclick="toggleHud()" id="b-hud" title="Hide controls (H)">👁</button>
     </div>
@@ -1173,22 +1173,59 @@ function audioPill(){
 }
 
 /* ═══ SCORING ═══ */
-function roundScore(r,ti){ let n=0; const m=S.marks[r]||{};
-  for(const k in m){ if((m[k]||[]).includes(ti)) n++; }
-  return n * CAT_META[r].pts; }
-function totalScore(ti){ return ROUNDS.reduce((s,r)=>s+roundScore(r,ti),0); }
-function clincherWins(ti){ let n=0; const m=S.marks.clincher||{};
-  for(const k in m){ if((m[k]||[]).includes(ti)) n++; } return n; }
-function rankings(){
-  const rk=S.teams.map((name,idx)=>({idx,name,
-    easy:roundScore('easy',idx),average:roundScore('average',idx),
-    difficult:roundScore('difficult',idx),clincher:clincherWins(idx),
-    total:totalScore(idx)})).filter(r=>r.name && r.name.trim());
-  rk.sort((a,b)=> b.total-a.total || b.clincher-a.clincher || a.idx-b.idx);
-  let rank=0,last=null,lastC=null;
-  rk.forEach((r,i)=>{ if(r.total!==last||r.clincher!==lastC){rank=i+1;last=r.total;lastC=r.clincher;} r.rank=rank; });
-  return rk;
+/* ═══ SCORING — one source of truth ═══════════════════════════════════
+   correctCount  how many questions a team got right in a round
+   roundValue    what that round is WORTH to the team, in that round's own
+                 unit: points for the scored rounds, WINS for the clincher.
+                 Every surface (scoresheet, standings, PDF, CSV, projector)
+                 must go through this. The clincher carries pts:0 because it
+                 adds nothing to the running total — reading it through a
+                 points multiplier silently zeroes a team's wins.
+   roundUnit     the label that belongs with roundValue.                     */
+/* A question counts as played if any judgement exists for it, or the Command
+   Center opened it. Deriving it means the scoresheet header, the round cards,
+   the Mechanics counts and the results PDF can no longer disagree — and a
+   tabulator judging ahead of the quizmaster no longer creates a discrepancy. */
+function isPlayed(r,i){
+  if((S.used[r]||[]).includes(i)) return true;
+  if(((S.marks[r]||{})[i]||[]).length) return true;
+  if(((S.wrong[r]||{})[i]||[]).length) return true;
+  return false;
 }
+function playedCount(r){ const n=(BANKS[r]||[]).length; let c=0;
+  for(let i=0;i<n;i++) if(isPlayed(r,i)) c++; return c; }
+
+function correctCount(r,ti){ let n=0; const m=S.marks[r]||{};
+  for(const k in m){ if((m[k]||[]).includes(ti)) n++; }
+  return n; }
+function isWinRound(r){ return !CAT_META[r].pts; }          // clincher: sudden death
+function roundValue(r,ti){ return isWinRound(r) ? correctCount(r,ti) : correctCount(r,ti)*CAT_META[r].pts; }
+function roundUnit(r){ return isWinRound(r) ? 'Wins' : 'Pts'; }
+/* points only — the clincher deliberately contributes nothing to the total */
+function roundScore(r,ti){ return isWinRound(r) ? 0 : correctCount(r,ti)*CAT_META[r].pts; }
+function totalScore(ti){ return ROUNDS.reduce((s,r)=>s+roundScore(r,ti),0); }
+function clincherWins(ti){ return correctCount('clincher',ti); }
+
+/* The single ranking rule. scope:null ranks the whole contest (total, then
+   clincher wins as the tiebreak). scope:'<round>' ranks within one round on
+   that round's own value, with the overall total as the tiebreak. */
+function rankTeams(scope){
+  const rows=S.teams.map((name,idx)=>({idx,name,
+    easy:roundValue('easy',idx), average:roundValue('average',idx),
+    difficult:roundValue('difficult',idx), clincher:clincherWins(idx),
+    total:totalScore(idx),
+    val: scope? roundValue(scope,idx) : totalScore(idx)
+  })).filter(r=>r.name && r.name.trim());
+  rows.sort((a,b)=> b.val-a.val || (scope? b.total-a.total : b.clincher-a.clincher) || a.idx-b.idx);
+  let rank=0,lastV=null,lastT=null;
+  rows.forEach((r,i)=>{
+    const tie = scope? r.total : r.clincher;
+    if(r.val!==lastV || tie!==lastT){ rank=i+1; lastV=r.val; lastT=tie; }
+    r.rank=rank;
+  });
+  return rows;
+}
+function rankings(){ return rankTeams(null); }
 
 /* ═══ SCREENS ═══ */
 function go(id,push=true){
@@ -1227,13 +1264,13 @@ function renderGrid(){
   const bank=BANKS[S.cat]||[];
   bank.forEach((q,i)=>{
     const b=document.createElement('div');
-    const isUsed=(S.used[S.cat]||[]).includes(i);
+    const isUsed=isPlayed(S.cat,i);
     b.className='q-box'+(isUsed?' used':'')+(q.calc?' calc-mark':'');
     b.textContent=i+1;
     b.onclick=()=>{ if(!isUsed) selectQ(i); else if(confirm('Question '+(i+1)+' is already done.\n\nRe-open it to correct the scores?')) selectQ(i,true); };
     g.appendChild(b);
   });
-  const rem=bank.length-(S.used[S.cat]||[]).length, m=CAT_META[S.cat];
+  const rem=bank.length-playedCount(S.cat), m=CAT_META[S.cat];
   document.getElementById('grid-title').textContent=
     m.label.toUpperCase()+' ROUND ('+m.ptsLbl+') — SELECT A QUESTION ('+rem+' remaining)';
 }
@@ -1717,7 +1754,7 @@ function shRound(r){
 function renderCards(){
   const w=document.getElementById('sh-cards'); if(!w)return;
   w.innerHTML=ROUNDS.map(r=>{
-    const m=CAT_META[r], n=(BANKS[r]||[]).length, d=(S.used[r]||[]).length;
+    const m=CAT_META[r], n=(BANKS[r]||[]).length, d=playedCount(r);
     const pct=n?Math.round(d/n*100):0;
     return '<div class="rcard'+(r===S.cat?' on':'')+'" style="color:'+m.color+'">'+
       '<div class="rk">'+m.label+'</div><div class="rv">'+d+' / '+n+'</div>'+
@@ -1768,7 +1805,7 @@ function exportCSV(){
   ROUNDS.forEach(r=>{
     const n=(BANKS[r]||[]).length, L=CAT_META[r].label.toUpperCase();
     for(let i=0;i<n;i++) head.push(L+' Q'+(i+1));
-    head.push(L+(r==='clincher'?' WINS':' PTS'));
+    head.push(L+' '+roundUnit(r).toUpperCase());
   });
   head.push('GRAND TOTAL');
   S.teams.forEach((nm,ti)=>{
@@ -1780,7 +1817,7 @@ function exportCSV(){
         const st=markState(r,i,ti);
         row.push(st===1?1:(st===0?0:''));     // blank = no judgement recorded
       }
-      row.push(r==='clincher'?clincherWins(ti):roundScore(r,ti));
+      row.push(roundValue(r,ti));
     });
     row.push(totalScore(ti));
     rowsOut.push(row);
@@ -1810,28 +1847,28 @@ function renderSheet(){
   hr.textContent=m.label.toUpperCase()+' ROUND'; hr.style.color=m.color;
   document.getElementById('sh-bar').style.background=m.color;
   document.getElementById('sh-bar').style.color=m.color;
-  document.getElementById('sh-played').textContent=used.length+'/'+n;
+  document.getElementById('sh-played').textContent=playedCount(r)+'/'+n;
   document.getElementById('sh-worth').textContent=m.ptsLbl;
 
   const pr=document.getElementById('sh-prog'); pr.style.color=m.color;
   pr.innerHTML=Array.from({length:n},(_,i)=>
-    '<i class="'+(i===S.slot?'live':(used.includes(i)?'done':''))+'"></i>').join('');
+    '<i class="'+(i===S.slot?'live':(isPlayed(r,i)?'done':''))+'"></i>').join('');
 
   /* Rank is computed from the scores, but the rows never move: each team keeps
      its own line all night. Reordering mid-round makes the operator lose their
      place and makes the audience watch rows leapfrog instead of reading scores. */
-  const rows=S.teams.map((name,idx)=>({idx,name,sc:roundScore(r,idx),tot:totalScore(idx)}))
-    .filter(x=>x.name&&x.name.trim());
-  const ranked=[...rows].sort((a,b)=> b.sc-a.sc || b.tot-a.tot || a.idx-b.idx);
-  let rk=0,last=null;
-  ranked.forEach((x,i)=>{ if(x.sc!==last){rk=i+1;last=x.sc;} x.rank=rk; });
+  const ranked=rankTeams(r);                       // same rule the standings use
+  const byIdx={}; ranked.forEach(x=>byIdx[x.idx]=x);
+  const rows=S.teams.map((name,idx)=>byIdx[idx]).filter(Boolean)
+    .sort((a,b)=>a.idx-b.idx)                      // rows never move; only the rank does
+    .map(x=>({idx:x.idx,name:x.name,sc:x.val,tot:x.total,rank:x.rank}));
   const anyScore=rows.some(x=>x.sc>0);
 
   let h='<div class="sh-row sh-head-row">'+
         '<div class="sh-c-rank">#</div><div class="sh-c-name" style="padding-left:'+
         'clamp(8px,.8vw,14px)">Team</div>';
   for(let i=0;i<n;i++) h+='<div class="sh-c-q'+(i===S.slot?' live':'')+'">'+(i+1)+'</div>';
-  h+='<div class="sh-c-pts">'+(r==='clincher'?'Wins':'Pts')+'</div><div class="sh-c-tot">Total</div></div>';
+  h+='<div class="sh-c-pts">'+roundUnit(r)+'</div><div class="sh-c-tot">Total</div></div>';
 
   rows.forEach(row=>{
     const medal=anyScore&&row.sc>0&&row.rank<=3?(' m'+row.rank):'';
@@ -1840,7 +1877,7 @@ function renderSheet(){
     h+='<div class="sh-c-name"><div class="sh-nm" title="'+esc(row.name)+'">'+esc(row.name)+'</div></div>';
     for(let i=0;i<n;i++){
       const st=markState(r,i,row.idx);
-      const played=used.includes(i)||(marks[i]&&marks[i].length)||((wrong[i]||[]).length);
+      const played=isPlayed(r,i);
       /* ✗ is shown ONLY where a judge recorded an incorrect answer. A played
          question with no mark stays neutral — inferring "wrong" from silence
          would accuse a team of something nobody ruled. */
@@ -1907,7 +1944,7 @@ function renderTab(target){
   const rk=rankings();
   const cm=CAT_META[S.cat];
   const tr=document.getElementById('tp-round'); if(tr)tr.textContent=cm.label;
-  const answered=(S.used[S.cat]||[]).length, total=(BANKS[S.cat]||[]).length;
+  const answered=playedCount(S.cat), total=(BANKS[S.cat]||[]).length;
   const ta=document.getElementById('tp-ans'); if(ta)ta.textContent=answered;
   const tt=document.getElementById('tp-tot'); if(tt)tt.textContent=total;
 
@@ -1981,7 +2018,8 @@ function openM(id){
     S.teams.forEach((t,i)=>{ const d=document.createElement('div'); d.className='mf';
       d.innerHTML='<label>Team '+(i+1)+'</label><input type="text" id="ti'+i+'" value="'+esc(t)+'">';
       w.appendChild(d); }); }
-  if(id==='m-share'){ document.getElementById('share-room').textContent='Room: '+ROOM+'  ·  Project: picpa-jeddah-hub'; cloudStatus(); }
+  if(id==='m-share'){ document.getElementById('share-room').textContent=
+      'This device is recorded as: '+whoAmI()+'  ·  every judgement it writes is stamped with that id'; cloudStatus(); }
   document.getElementById(id).classList.add('show');
 }
 function closeM(id){ document.getElementById(id).classList.remove('show'); }
@@ -1990,19 +2028,41 @@ function saveTeams(){
   renderTeamBtns(); renderTab(); if(MODE==='tab')renderScorer(); closeM('m-setup'); pushTeams();
 }
 function resetScores(){
+  /* Checked here, not just hidden in the HUD: a hidden button is not a control. */
+  if(MODE!=='cc'||!isAdmin()){
+    alert('Only the Command Center can reset the contest.\n\nThis wipes every score for every round and cannot be undone.');
+    return;
+  }
+  const marked=ROUNDS.reduce((n,r)=>n+Object.values(S.marks[r]||{}).reduce((a,x)=>a+x.length,0),0);
+  const typed=prompt('This deletes EVERY score in EVERY round for all teams.\n\n'+
+    marked+' recorded judgement'+(marked===1?'':'s')+' will be destroyed. It cannot be undone.\n\n'+
+    'A backup CSV will download first.\n\nType  RESET  to confirm:');
+  if(typed===null) return;
+  if(typed.trim().toUpperCase()!=='RESET'){ toast('Reset cancelled — nothing was deleted.',4200); return; }
+  try{ exportCSV(); }catch(e){}          /* snapshot before the point of no return */
   pending.length=0; updPend();
-  if(!confirm('Reset ALL scores and used questions? This cannot be undone.'))return;
-  ROUNDS.forEach(r=>{S.marks[r]={};S.used[r]=[];});
+  ROUNDS.forEach(r=>{S.marks[r]={};S.wrong[r]={};S.used[r]=[];});
   S.slot=-1; revealed=false; prevPos={};
   fetch(REST+'quizbee_marks?round=neq.__none__',{method:'DELETE',headers:{...H,'Prefer':'return=minimal'}})
     .then(()=>setDot('ok')).catch(()=>setDot('err'));
-  renderGrid(); renderTab(); renderTeamBtns(); if(MODE==='tab')renderScorer(); pushFlow();
+  renderGrid(); renderTab(); renderTeamBtns(); renderSheet();
+  if(MODE==='tab')renderScorer(); pushFlow();
+  toast('All scores reset. The backup CSV is in your downloads.',6000);
 }
 
 /* ═══ CLOUD SYNC (two-way, granular) ═══ */
 let MODE=null;                 // 'cc' = Command Center, 'tab' = Tabulator
 let cloudOK=null, pushT=null, follow=true, pulling=false;
 const REST=SUPA_URL+'/rest/v1/';
+/* Provenance, not authentication. A stable per-device id so a disputed score
+   can be traced to the machine that recorded it. The page is public and ships
+   its own key, so this cannot stop a determined write — it makes an honest
+   mistake findable and a dishonest one visible. */
+const DEVICE_ID=(()=>{ let d=null;
+  try{ d=localStorage.getItem('picpa_dev'); }catch(e){}
+  if(!d){ d=Math.random().toString(36).slice(2,6); try{localStorage.setItem('picpa_dev',d);}catch(e){} }
+  return d; })();
+function whoAmI(){ return (MODE||'?')+'-'+DEVICE_ID; }
 const H={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'};
 
 function setDot(st){ cloudOK=st;
@@ -2041,7 +2101,7 @@ async function markPush(round,slot,team,add,val,isRetry){
     if(add){
       r=await fetch(REST+'quizbee_marks',{method:'POST',
         headers:{...H,'Prefer':'resolution=merge-duplicates,return=minimal'},
-        body:JSON.stringify({round,slot,team_idx:team,val})});
+        body:JSON.stringify({round,slot,team_idx:team,val,written_by:whoAmI()})});
     }else{
       r=await fetch(REST+'quizbee_marks?round=eq.'+encodeURIComponent(round)+'&slot=eq.'+slot+'&team_idx=eq.'+team,
         {method:'DELETE',headers:{...H,'Prefer':'return=minimal'}});
@@ -2111,7 +2171,7 @@ async function cloudPull(){
       if(typeof f.mecIdx==='number'&&f.mecIdx!==mecIdx){ mecIdx=f.mecIdx; if(S.screen==='sc-mech') renderMech(); }
       if(f.spView&&f.spView!==spView) spView=f.spView;
       let tgt=f.screen;
-      if(tgt==='sc-winner'){ const rk0=rankings(); if(!rk0.length||rk0[0].total<=0) tgt='sc-tab'; }
+      if(tgt==='sc-winner'){ const rk0=rankings(); if(!rk0.length||(rk0[0].total<=0&&rk0[0].clincher<=0)) tgt='sc-tab'; }
       if(tgt&&tgt!==S.screen){ go(tgt,false); }
       else if(tgt==='sc-sponsors') renderSponsors();
       else if(tgt==='sc-mech') renderMech();
@@ -2299,7 +2359,7 @@ function applyAud(d){
   if(d.spView) spView=d.spView;
 
   let scr=d.screen||'sc-idle';
-  if(scr==='sc-winner'){ const rk0=rankings(); if(!rk0.length||rk0[0].total<=0) scr='sc-tab'; }
+  if(scr==='sc-winner'){ const rk0=rankings(); if(!rk0.length||(rk0[0].total<=0&&rk0[0].clincher<=0)) scr='sc-tab'; }
 
   const screenChanged=(S.screen!==scr);
   if(screenChanged) go(scr,false);          // go() renders the screen it switches to
@@ -2368,33 +2428,41 @@ function repFoot(n){
 }
 function roundReport(cat){
   const m=CAT_META[cat], bank=BANKS[cat]||[], marks=S.marks[cat]||{};
-  const played=[]; for(let i=0;i<bank.length;i++){ if((S.used[cat]||[]).includes(i)||(marks[i]&&marks[i].length)) played.push(i); }
-  const pts=(typeof m.pts==='number')?m.pts:0;
+  const played=[]; for(let i=0;i<bank.length;i++){ if(isPlayed(cat,i)) played.push(i); }
+  const ranked=rankTeams(cat); const byIdx={}; ranked.forEach(x=>byIdx[x.idx]=x);
   const rows=S.teams.map((n,ti)=>{
-    if(!n||!n.trim())return null;
-    const got=[]; Object.keys(marks).forEach(k=>{ if((marks[k]||[]).includes(ti)) got.push(parseInt(k)+1); });
-    got.sort((a,b)=>a-b);
-    return {name:n, got, correct:got.length, score:got.length*pts, total:totalScore(ti)};
-  }).filter(Boolean).sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name));
-  let rank=0,last=null;
-  rows.forEach((r,i)=>{ if(r.score!==last){rank=i+1;last=r.score;} r.rank=rank; });
+    if(!n||!n.trim()||!byIdx[ti])return null;
+    const got=[], missed=[];
+    Object.keys(marks).forEach(k=>{ if((marks[k]||[]).includes(ti)) got.push(parseInt(k)+1); });
+    Object.keys(S.wrong[cat]||{}).forEach(k=>{ if(((S.wrong[cat]||{})[k]||[]).includes(ti)) missed.push(parseInt(k)+1); });
+    got.sort((a,b)=>a-b); missed.sort((a,b)=>a-b);
+    return {name:n, got, missed, correct:got.length,
+            score:byIdx[ti].val, rank:byIdx[ti].rank, total:totalScore(ti)};
+  }).filter(Boolean).sort((a,b)=>a.rank-b.rank||a.name.localeCompare(b.name));
   const top=rows.length?rows[0].score:0;
   let h='<div class="rep">'+repHead();
   h+='<div class="rep-title">OFFICIAL ROUND RESULTS</div>';
   h+='<div class="rep-sub"><b>'+m.label.toUpperCase()+' ROUND</b> &nbsp;&middot;&nbsp; '+m.ptsLbl+' per correct answer</div>';
+  const unit=roundUnit(cat);
   h+='<div class="rep-meta"><span>Questions played: <b>'+played.length+'</b> of '+bank.length+'</span>'+
-     '<span>Teams: <b>'+rows.length+'</b></span><span>Maximum obtainable: <b>'+(played.length*pts)+' pts</b></span></div>';
-  h+='<table class="rt"><thead><tr><th class="num">Rank</th><th>Team</th><th>Questions answered correctly</th>'+
-     '<th class="num">Correct</th><th class="num">Round Points</th><th class="num">Cumulative</th></tr></thead><tbody>';
+     '<span>Teams: <b>'+rows.length+'</b></span><span>Maximum obtainable: <b>'+
+     (isWinRound(cat)? played.length+' wins' : played.length*pts+' pts')+'</b></span></div>';
+  h+='<table class="rt"><thead><tr><th class="num">Rank</th><th>Team</th><th>Answered correctly</th>'+
+     '<th>Judged incorrect</th>'+
+     '<th class="num">Correct</th><th class="num">Round '+unit+'</th><th class="num">Cumulative</th></tr></thead><tbody>';
   rows.forEach(r=>{
     h+='<tr'+(r.score===top&&top>0?' class="win"':'')+'><td class="num">'+r.rank+'</td><td>'+esc(r.name)+'</td>'+
        '<td>'+(r.got.length?r.got.map(q=>'Q'+q).join(', '):'&mdash;')+'</td>'+
+       '<td>'+(r.missed.length?r.missed.map(q=>'Q'+q).join(', '):'&mdash;')+'</td>'+
        '<td class="num">'+r.correct+'</td><td class="num">'+r.score+'</td><td class="tot">'+r.total+'</td></tr>';
   });
   h+='</tbody></table>';
   h+='<div class="rep-note"><b>Certification.</b> The scores above were recorded live during the '+m.label+
      ' round and reflect the answers accepted by the Quizmaster and the panel of judges at the time of play. '+
+     '&ldquo;Round '+unit+'&rdquo; is stated in that round&rsquo;s own unit &mdash; points for the scored rounds, '+
+     'wins for the sudden-death Clincher, which carries no points into the total. '+
      '&ldquo;Cumulative&rdquo; shows each team&rsquo;s running total across all rounds completed to date. '+
+     'A blank cell means no judgement was recorded for that team on that question. '+
      'Any correction after signing must be initialled by the Head of Judges.</div>';
   h+=sigBlock()+repFoot(m.label+' Round')+'</div>';
   return h;
@@ -2402,7 +2470,7 @@ function roundReport(cat){
 function summaryReport(){
   const rows=S.teams.map((n,ti)=>{
     if(!n||!n.trim())return null;
-    const per={}; ROUNDS.forEach(r=>{ per[r]=roundScore(r,ti); });
+    const per={}; ROUNDS.forEach(r=>{ per[r]=roundValue(r,ti); });
     return {name:n, per, total:totalScore(ti)};
   }).filter(Boolean).sort((a,b)=>b.total-a.total||a.name.localeCompare(b.name));
   let rank=0,last=null;
@@ -2414,7 +2482,7 @@ function summaryReport(){
   h+='<div class="rep-meta"><span>Teams: <b>'+rows.length+'</b></span><span>Scoring: Easy 1 &middot; Average 3 &middot; Difficult 5</span>'+
      '<span>Status: <b>'+(champTied?'TIE AT FIRST PLACE':'RESOLVED')+'</b></span></div>';
   h+='<table class="rt"><thead><tr><th class="num">Rank</th><th>Team</th><th class="num">Easy<br>(1 pt)</th>'+
-     '<th class="num">Average<br>(3 pts)</th><th class="num">Difficult<br>(5 pts)</th><th class="num">Clincher</th>'+
+     '<th class="num">Average<br>(3 pts)</th><th class="num">Difficult<br>(5 pts)</th><th class="num">Clincher<br>(wins)</th>'+
      '<th class="num">TOTAL</th></tr></thead><tbody>';
   rows.forEach(r=>{
     h+='<tr'+(r.rank===1&&r.total>0?' class="win"':'')+'><td class="num">'+r.rank+'</td><td>'+esc(r.name)+'</td>'+
@@ -2462,16 +2530,26 @@ function tryPin(){
     try{sessionStorage.setItem('picpa_admin','1');}catch(e){}
     closeM('m-pin');
     document.getElementById('hud').style.display='';
+    pendingMode=null;
     setMode('cc');
   }else{
     err.style.display='block'; i.value=''; i.focus();
     i.classList.add('shake'); setTimeout(()=>i.classList.remove('shake'),500);
   }
 }
-function pinAsTab(){ closeM('m-pin'); document.getElementById('hud').style.display=''; setMode('tab'); }
+function pinAsTab(){ closeM('m-pin'); document.getElementById('hud').style.display='';
+  pendingMode=null; setMode('tab'); }
 
 /* ═══ MODE ═══ */
+function isAdmin(){ try{ return sessionStorage.getItem('picpa_admin')==='1'; }catch(e){ return false; } }
+/* Command Center is the only role that can drive the projector, edit questions
+   and reset the contest, so it is the only one behind the PIN — and the check
+   lives HERE, not on the boot path, because the role picker and the M key can
+   both reach it. This is a UI lock against accidents and casual meddling; it is
+   not security (the page is public and the key ships with it). */
+let pendingMode=null;
 function setMode(m){
+  if(m==='cc' && !isAdmin()){ pendingMode='cc'; closeM('m-mode'); openPin(); return; }
   MODE=m; try{localStorage.setItem('picpa_qb_mode',m);}catch(e){}
   closeM('m-mode');
   const mp=document.getElementById('modepill');
