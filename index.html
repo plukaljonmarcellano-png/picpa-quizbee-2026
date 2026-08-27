@@ -632,6 +632,50 @@ table.rt tr.win td{background:#FFF2C2 !important;font-weight:800;}
 .tmr-c input:focus{outline:none;border-color:var(--gold);}
 .tmr-c .ts{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-top:7px;}
 
+/* ── H2: small screens ──
+   Below 1024px the rail and the board cannot sit side by side: 214px + a
+   10-column grid overflows and the two overlap. Stack them instead, and below
+   640px drop the question matrix entirely — a phone should be able to SCORE,
+   which needs the rail and a total, not a 10-column grid nobody can read. */
+@media (max-width:1024px){
+  #sc-sheet .sh-console{flex-direction:column;overflow-y:auto}
+  #sc-sheet .sh-rail{width:100%;border-right:none;border-bottom:3px solid var(--gold);
+    max-height:52vh;overflow-y:auto;flex:none}
+  #sc-sheet .sh-rail .rail-teams{max-height:none;overflow:visible}
+  #sc-sheet .sh-main{padding:12px 10px 0;flex:none}
+  #sc-sheet .sh-grid{flex:none}
+  #sc-sheet .sh-lane{flex:none;min-height:38px}
+  #sc-sheet .sh-cards{grid-template-columns:repeat(2,1fr)}
+  #sc-sheet .sh-top{flex-direction:column;align-items:flex-start;gap:10px}
+  #sc-sheet .sh-meta{flex-wrap:wrap}
+  /* HUD: the three zones reserve 190px each and never wrap, so on a narrow
+     screen the mode pill, the display switcher and the right-hand tools
+     overprint one another. Let the row wrap and release the reserved width. */
+  .hrow.main{flex-wrap:wrap;row-gap:6px;padding:7px 10px}
+  .hz.left,.hz.right{min-width:0}
+  .hz.center{flex:1 1 100%;order:3;justify-content:flex-start;
+    overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .hz.center .seg{flex:none}
+  .hrow.ctx{padding:6px 10px}
+}
+@media (max-width:640px){
+  .hz.left,.hz.right{flex:1 1 auto;flex-wrap:wrap;row-gap:6px}
+  .hz.right{justify-content:flex-end}
+  .hz.center .glabel{display:none}
+  .sgb{padding:7px 11px}
+  .hb{padding:7px 11px}
+  #sc-sheet .sh-c-q{display:none}                 /* matrix is unreadable here */
+  #sc-sheet .sh-prog{display:none}
+  #sc-sheet .sh-cards{grid-template-columns:repeat(2,1fr);gap:6px}
+  #sc-sheet .rcard{padding:7px 9px}
+  #sc-sheet .sh-c-name{max-width:none}
+  #sc-sheet .sh-c-pts{flex:0 0 auto;width:74px}
+  #sc-sheet .sh-c-tot{flex:0 0 auto;width:56px}
+  #sc-sheet .sh-rail{max-height:none}
+  #sc-sheet .sh-foot{display:none}
+  #sc-sheet .sh-round{font-size:26px}
+}
+
 /* ── projector / audience: the board fills the frame ──
    With no rail there is far more room, and the vw-based column widths leave it
    empty. On the audience view the columns flex to use the whole screen and the
@@ -1130,7 +1174,7 @@ ROUNDS.forEach(r=>{ S.marks[r]={}; S.wrong[r]={}; S.used[r]=[]; });
 
 const PRESETS_BUILTIN={easy:10,average:10,difficult:10,clincher:30,calc:30};
 let presets={...PRESETS_BUILTIN};
-let timerRunning=false,timerLeft=10,timerMax=10,timerInt=null,revealed=false;
+let timerRunning=false,timerLeft=10,timerMax=10,timerInt=null,revealed=false,timerSeq=0;
 let soundOn=true,hudVis=true,prevPos={};
 
 /* ═══ AUDIO ═══ */
@@ -1334,13 +1378,16 @@ function toggleMark(ti){
 }
 
 /* ═══ TIMER ═══ */
-function startTimer(){ if(timerRunning||timerLeft<=0)return; timerRunning=true;
+function startTimer(){ if(timerRunning||timerLeft<=0)return; timerRunning=true; timerSeq++;
   document.getElementById('b-pause').disabled=false; document.getElementById('b-start').disabled=true;
+  pushFlow();                                   /* tell the other devices at once */
   timerInt=setInterval(()=>{ if(timerLeft<=0){stopTimer();timeUp();return;}
     timerLeft--; updTimer(); if(timerLeft>0) playTick(timerLeft); },1000); }
-function pauseTimer(){ if(!timerRunning)return; timerRunning=false; clearInterval(timerInt);
-  document.getElementById('b-pause').disabled=true; document.getElementById('b-start').disabled=false; }
-function stopTimer(){ timerRunning=false; clearInterval(timerInt); }
+function pauseTimer(){ if(!timerRunning)return; timerRunning=false; clearInterval(timerInt); timerSeq++;
+  document.getElementById('b-pause').disabled=true; document.getElementById('b-start').disabled=false;
+  pushFlow(); }
+function stopTimer(){ const was=timerRunning; timerRunning=false; clearInterval(timerInt);
+  if(was && MODE==='cc'){ timerSeq++; pushFlow(); } }
 function resetTimer(){ stopTimer(); timerLeft=timerMax; updTimer();
   document.getElementById('b-pause').disabled=true; document.getElementById('b-start').disabled=false; }
 function timeUp(){ stopTimer(); playBuzzer();
@@ -1356,6 +1403,28 @@ function updTimer(){ if(!IS_CHILD) setTimeout(pushSecond,0);
   const c=document.getElementById('tcircle'); if(c)c.style.strokeDashoffset=327*(1-p);
   let col=CAT_META[S.cat].color; if(p<=.25)col='#C0392B'; else if(p<=.5)col='#E67E22';
   if(c)c.style.stroke=col;
+}
+
+/* A device that does not own the timer follows it. It never reads the sender's
+   clock — only the seconds-remaining it was handed and its own elapsed time
+   since receiving it, so skew between laptops is irrelevant. */
+let followInt=null,followSeq=-1;
+function followTimer(f){
+  if(MODE==='cc'||!f) return;
+  const seq=(typeof f.tSeq==='number')?f.tSeq:0;
+  if(typeof f.tMax==='number') timerMax=f.tMax;
+  const running=!!f.tRun, left=(typeof f.tLeft==='number')?f.tLeft:timerLeft;
+  /* Only re-seed when the Command Center actually changed something. Otherwise
+     a 2.5s poll would keep yanking the display back and it would visibly stutter. */
+  if(seq===followSeq && running===!!followInt) return;
+  followSeq=seq; clearInterval(followInt); followInt=null;
+  timerLeft=left; updTimer();
+  if(running && left>0){
+    followInt=setInterval(()=>{
+      if(timerLeft<=0){ clearInterval(followInt); followInt=null; updTimer(); return; }
+      timerLeft--; updTimer(); if(timerLeft>0) playTick(timerLeft); else playBuzzer();
+    },1000);
+  }
 }
 
 /* ═══ REVEAL / NEXT ═══ */
@@ -1431,7 +1500,18 @@ function cfgLoadLocal(){
   try{ const raw=localStorage.getItem(CFG_KEY); if(raw) cfgApply(JSON.parse(raw),true); }catch(e){}
 }
 function cfgSaveLocal(c){ try{ localStorage.setItem(CFG_KEY,JSON.stringify(c)); }catch(e){} }
-async function cfgPushCloud(c){ await rowPush('config',c); }
+async function cfgPushCloud(c){
+  const ok=await rowPushIfUnchanged('config',c);
+  if(!ok){
+    /* Someone else saved while this editor was open. Do not clobber them. */
+    const theirs=await rowPull('config');
+    toast('⚠ Not saved — the other laptop changed the settings while you were editing. '+
+          'Your questions are still here; reopen Settings to see theirs, then re-apply your change.',11000);
+    if(theirs) { cfgApply(theirs); cfgSaveLocal(theirs); }
+    return false;
+  }
+  return true;
+}
 
 /* ---- editor ---- */
 function cfgOpen(){
@@ -1575,9 +1655,11 @@ function cfgSave(){
   cfgDraft.v=Date.now();
   cfgApply(cfgDraft);
   const c=cfgCurrent();
-  cfgSaveLocal(c); cfgPushCloud(c); pushSecond();
+  cfgSaveLocal(c); pushSecond();
   closeM('m-cfg');
-  toast('✅ Settings saved and synced to the other laptop and 2nd screen.',5000);
+  cfgPushCloud(c).then(ok=>{
+    if(ok) toast('✅ Settings saved and synced to the other laptop and 2nd screen.',5000);
+  });
 }
 function cfgFactory(){
   if(!confirm('Discard all question and timer edits and go back to the built-in set?\n\nDownload a backup first if you might want them again.'))return;
@@ -2140,15 +2222,36 @@ async function rowPush(id,obj){
       headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({state:obj})});
     setDot(r.ok?'ok':'err'); }catch(e){ setDot('err'); }
 }
+let rowRev={};                       /* last server revision seen, per row */
 async function rowPull(id){
-  try{ const r=await fetch(REST+'quizbee_state?id=eq.'+id+'&select=state',{headers:H});
+  try{ const r=await fetch(REST+'quizbee_state?id=eq.'+id+'&select=state,rev',{headers:H});
     if(!r.ok){setDot('err');return null;}
     const j=await r.json(); setDot('ok');
+    if(j&&j[0]&&typeof j[0].rev==='number') rowRev[id]=j[0].rev;
     return (j&&j[0]&&j[0].state)||null;
   }catch(e){ setDot('err'); return null; }
 }
+/* Write only if nobody else has written since we last read. The revision is
+   assigned by a database trigger, so it does not depend on any laptop's clock —
+   two machines with minutes of skew still order their edits correctly.
+   Returns true on success, false if someone else got there first. */
+async function rowPushIfUnchanged(id,obj){
+  const base=rowRev[id];
+  if(typeof base!=='number'){ await rowPull(id); }
+  const q='quizbee_state?id=eq.'+id+(typeof rowRev[id]==='number'?'&rev=eq.'+rowRev[id]:'');
+  try{
+    const r=await fetch(REST+q,{method:'PATCH',
+      headers:{...H,'Prefer':'return=representation'},body:JSON.stringify({state:obj})});
+    if(!r.ok){ setDot('err'); return false; }
+    const j=await r.json(); setDot('ok');
+    if(!j.length) return false;                      // 0 rows matched → stale
+    if(typeof j[0].rev==='number') rowRev[id]=j[0].rev;
+    return true;
+  }catch(e){ setDot('err'); return false; }
+}
 function pushFlow(){ if(MODE!=='cc')return;
-  rowPush('flow',{cat:S.cat,slot:S.slot,used:S.used,screen:S.screen,rev:S.rev,spView,spIdx,mecIdx,ts:Date.now()}); }
+  rowPush('flow',{cat:S.cat,slot:S.slot,used:S.used,screen:S.screen,rev:S.rev,spView,spIdx,mecIdx,
+                  tRun:timerRunning, tLeft:timerLeft, tMax:timerMax, tSeq:timerSeq, ts:Date.now()}); }
 function pushTeams(){ rowPush('teams',{teams:S.teams,ts:Date.now()}); }
 function sync(){ pushSecond(); clearTimeout(pushT); pushT=setTimeout(pushFlow,350); }
 
@@ -2170,6 +2273,7 @@ async function cloudPull(){
       if(typeof f.spIdx==='number') spIdx=f.spIdx;
       if(typeof f.mecIdx==='number'&&f.mecIdx!==mecIdx){ mecIdx=f.mecIdx; if(S.screen==='sc-mech') renderMech(); }
       if(f.spView&&f.spView!==spView) spView=f.spView;
+      followTimer(f);
       let tgt=f.screen;
       if(tgt==='sc-winner'){ const rk0=rankings(); if(!rk0.length||(rk0[0].total<=0&&rk0[0].clincher<=0)) tgt='sc-tab'; }
       if(tgt&&tgt!==S.screen){ go(tgt,false); }
@@ -2183,6 +2287,7 @@ async function cloudPull(){
   if(MODE==='tab'){
     const f=await rowPull('flow');
     if(f){
+      followTimer(f);
       if(f.used) S.used=f.used;
       if(follow){
         const changed=(f.cat!==S.cat)||(f.slot!==S.slot);
