@@ -956,6 +956,7 @@ body.child #sc-sheet .sh-foot,body.audience #sc-sheet .sh-foot{padding-bottom:cl
 
     <div class="hz right">
       <button class="hb cc-nav" id="b-open2" onclick="openSecond()">🖥 2nd Screen</button>
+      <button class="hb cc-nav" id="b-open3" onclick="openThird()" title="A second display, mirroring the 2nd screen — silent, so the hall does not hear doubled ticks">🖥 3rd Screen</button>
       <button class="hicon on" id="b-sound" onclick="toggleSound()" title="Sound on/off (B)">🔊</button>
       <button class="hb" onclick="openM('m-res')" title="Official results PDF">📄 Results</button>
       <button class="hicon cc-only" onclick="cfgOpen()" title="Settings — questions &amp; timers">⚙</button>
@@ -1024,7 +1025,20 @@ body.child #sc-sheet .sh-foot,body.audience #sc-sheet .sh-foot{padding-bottom:cl
       </div>
       <button class="hb" onclick="sendToProjector()" title="Move the 2nd screen onto the projector / external display and go full screen">⛶ To Projector</button>
       <button class="hb" id="b-ccaud" onclick="toggleCcAudio()" title="Also play the tick and buzzer on this laptop (off = only the 2nd screen makes sound)">🔈 CC Audio: Off</button>
-      <button class="hicon" onclick="closeSecond()" title="Close 2nd screen">✕</button>
+      <button class="hicon" onclick="closeSecond(2)" title="Close 2nd screen">✕</button>
+    </span>
+
+    <span class="cgrp" data-ctx="third" id="s3ctl">
+      <span class="vr"></span>
+      <span class="glabel">3rd Screen</span>
+      <div class="seg">
+        <button class="sgb s3b on" data-t="sc-tab"      onclick="setThird('sc-tab')">Standings</button>
+        <button class="sgb s3b"    data-t="sc-sheet"    onclick="setThird('sc-sheet')">Scoresheet</button>
+        <button class="sgb s3b"    data-t="sc-sponsors" onclick="setThird('sc-sponsors')">Sponsors</button>
+        <button class="sgb s3b"    data-t="sc-winner"   onclick="setThird('sc-winner')">Champion</button>
+      </div>
+      <button class="hb" onclick="placeSecond(true,audWin2)" title="Move the 3rd screen onto an external display and go full screen">⛶ To Display</button>
+      <button class="hicon" onclick="closeSecond(3)" title="Close 3rd screen">✕</button>
     </span>
 
   </div>
@@ -1228,7 +1242,7 @@ function AC(){ if(!_ac){try{_ac=new (window.AudioContext||window.webkitAudioCont
 /* When the 2nd screen is live it carries the room audio; keep the operator's
    laptop quiet by default so the hall doesn't hear a doubled, out-of-sync tick. */
 let ccAudio=false;
-function audMuted(){ return !IS_CHILD && audWin && !audWin.closed && !ccAudio; }
+function audMuted(){ return anySecond() && !ccAudio; }
 function playTick(s){ if(!soundOn||audMuted())return; const a=AC(); if(!a)return; if(a.state==='suspended')a.resume();
   const t=a.currentTime,u=s<=5,o=a.createOscillator(),g=a.createGain();
   o.type=u?'square':'sine'; o.frequency.value=u?950:1500;
@@ -1331,7 +1345,7 @@ function go(id,push=true){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const el=document.getElementById(id); if(el) el.classList.add('active');
   S.screen=id;
-  if(id!=='sc-sponsors' && !(audWin && !audWin.closed && (audTarget==='sc-sponsors'||audTarget==='mirror'&&id==='sc-sponsors'))) stopSpAuto();
+  if(id!=='sc-sponsors' && !(anySecond() && (audTarget==='sc-sponsors'||audTarget==='mirror'&&id==='sc-sponsors'))) stopSpAuto();
   if(id==='sc-sponsors'){ renderSponsors(); }
   if(id==='sc-mech'){ renderMech(); }
   if(id==='sc-sheet'){ renderSheet(); }
@@ -2391,17 +2405,20 @@ function cloudPush(){ pushFlow(); pushTeams(); }
 /* ═══ CONTEXTUAL CONSOLE ═══ */
 function hudCtx(){
   const scr=S.screen;
-  const show={round:false,question:false,sponsors:false,second:false,mech:false};
+  const show={round:false,question:false,sponsors:false,second:false,mech:false,third:false};
   if(scr==='sc-grid'||scr==='sc-question') show.round=true;
   if(scr==='sc-question') show.question=true;
   if(scr==='sc-sponsors') show.sponsors=true;
   if(scr==='sc-mech') show.mech=true;
   if(audWin&&!audWin.closed) show.second=true;
+  if(audWin2&&!audWin2.closed) show.third=true;
   document.querySelectorAll('.cgrp').forEach(g=>g.classList.toggle('show',!!show[g.dataset.ctx]));
   document.querySelectorAll('#segScreen .sgb').forEach(b=>b.classList.toggle('on',b.dataset.s===scr));
   document.querySelectorAll('.sgb.rnd').forEach(b=>b.classList.toggle('on',b.dataset.r===S.cat));
   const b2=document.getElementById('b-open2');
   if(b2) b2.textContent=(audWin&&!audWin.closed)?'🖥 2nd Screen ●':'🖥 2nd Screen';
+  const b3e=document.getElementById('b-open3');
+  if(b3e) b3e.textContent=(audWin2&&!audWin2.closed)?'🖥 3rd Screen ●':'🖥 3rd Screen';
 }
 
 /* ═══ SECOND SCREEN (popup window on this laptop) ═══ */
@@ -2409,7 +2426,19 @@ const QP=new URLSearchParams(location.search);
 const IS_CHILD = QP.get('screen')==='1';
 const URL_ROLE = (QP.get('role')||'').toLowerCase();   // admin | tabulator | screen
 const ADMIN_PIN = '2026';
-let audWin=null, audTarget='mirror';
+let audWin=null, audWin2=null, audTarget='mirror';
+/* The 3rd screen is not a mirror: it is the audience-facing display, so the
+   hall can read the standings while the contestants' screen shows the live
+   question. It is restricted to the views that make sense unattended — no
+   question screen, so an answer can never appear on the wrong display. */
+let aud3Target='sc-tab';
+const AUD3_ALLOWED=['sc-tab','sc-sheet','sc-sponsors','sc-winner'];
+/* Two display windows can be open at once (e.g. a projector facing the
+   contestants and a TV facing the audience). Both mirror the same content.
+   Only ONE of them carries sound: two windows ticking a second apart through
+   the same hall PA is worse than no sound at all, so screen 3 is silent. */
+function secWins(){ return [audWin,audWin2].filter(w=>w&&!w.closed); }
+function anySecond(){ return !IS_CHILD && secWins().length>0; }
 
 let _toastT=null;
 function toast(msg,ms){
@@ -2429,16 +2458,17 @@ async function extScreen(){
   }catch(e){ return null; }
 }
 /* Move the 2nd-screen window onto the external display and fill it */
-async function placeSecond(fs){
-  if(!audWin||audWin.closed) return false;
+async function placeSecond(fs,w){
+  w=w||audWin;
+  if(!w||w.closed) return false;
   const sc=await extScreen();
   if(sc){
-    try{ audWin.moveTo(sc.availLeft,sc.availTop); audWin.resizeTo(sc.availWidth,sc.availHeight); }catch(e){}
+    try{ w.moveTo(sc.availLeft,sc.availTop); w.resizeTo(sc.availWidth,sc.availHeight); }catch(e){}
   }
   if(fs){
-    try{ const de=audWin.document.documentElement; if(de.requestFullscreen) await de.requestFullscreen(); }catch(e){}
+    try{ const de=w.document.documentElement; if(de.requestFullscreen) await de.requestFullscreen(); }catch(e){}
   }
-  try{ audWin.focus(); }catch(e){}
+  try{ w.focus(); }catch(e){}
   return !!sc;
 }
 function toggleCcAudio(){
@@ -2452,44 +2482,68 @@ function sendToProjector(){
     openSecond(true);
     return;
   }
-  placeSecond(true).then(ok=>{
+  placeSecond(true,audWin).then(ok=>{
     toast(ok ? '🖥 2nd screen moved to the projector display.'
              : 'Only one display detected — drag the 2nd-screen window onto the projector, then press F11.', 5200);
   });
 }
 
-function openSecond(toProjector){
-  if(audWin && !audWin.closed){ audWin.focus(); return; }
+function openSecond(toProjector){ openDisplay(2,toProjector); }
+function openThird(toProjector){ openDisplay(3,toProjector); }
+/* n=2 is the sound-carrying display, n=3 is the silent mirror. Distinct window
+   NAMES matter: reusing one name makes the browser hand back the same window
+   instead of opening a second one. */
+function openDisplay(n,toProjector){
+  const cur = n===3?audWin2:audWin;
+  if(cur && !cur.closed){ cur.focus(); return; }
   const u=location.href.split('?')[0].split('#')[0]+'?screen=1';
-  audWin=window.open(u,'picpa_second','width=1280,height=800');
-  if(!audWin){ alert('Your browser blocked the pop-up.\n\nAllow pop-ups for this page, then click "Open 2nd Screen" again.'); return; }
-    hudCtx();
-  /* best-effort: land it straight on the external display (projector / Samsung screen) */
-  setTimeout(()=>{ placeSecond(!!toProjector).then(ok=>{
-    if(!ok && toProjector) toast('Only one display detected — drag the 2nd-screen window onto the projector, then press F11.',5200);
+  const w=window.open(u, n===3?'picpa_third':'picpa_second','width=1280,height=800');
+  if(!w){ alert('Your browser blocked the pop-up.\n\nAllow pop-ups for this page, then click "'+n+(n===3?'rd':'nd')+' Screen" again.'); return; }
+  if(n===3) audWin2=w; else audWin=w;
+  hudCtx();
+  /* best-effort: land it straight on the external display (projector / TV) */
+  setTimeout(()=>{ placeSecond(!!toProjector,w).then(ok=>{
+    if(!ok && toProjector) toast('Only one extra display detected — drag the window onto the screen you want, then press F11.',5200);
+    pushSecond();
   }); }, 900);
-  const t=setInterval(()=>{ if(!audWin||audWin.closed){ clearInterval(t); secondClosed(); } },1000);
+  const t=setInterval(()=>{ const ww=(n===3?audWin2:audWin);
+    if(!ww||ww.closed){ clearInterval(t); secondClosed(n); } },1000);
 }
-function closeSecond(){ if(audWin&&!audWin.closed) audWin.close(); secondClosed(); }
-function secondClosed(){
-  audWin=null; hudCtx();
-  const c=document.getElementById('s2ctl'), b=document.getElementById('b-open2');
-    if(b)b.textContent='🖥️ Open 2nd Screen';
+function closeSecond(n){
+  const shut=k=>{ const w=(k===3?audWin2:audWin);
+    if(w&&!w.closed){ try{ w.close(); }catch(e){} } secondClosed(k); };
+  if(n===2||n===3) shut(n); else { shut(2); shut(3); }   // no argument = close all
+}
+function secondClosed(n){
+  if(n===3) audWin2=null; else audWin=null;
+  hudCtx();
+  const b=document.getElementById(n===3?'b-open3':'b-open2');
+  if(b) b.textContent = n===3?'🖥 3rd Screen':'🖥 2nd Screen';
 }
 function setSecond(t){
   audTarget=t;
   document.querySelectorAll('.s2b').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
   pushSecond();
 }
-function audPayload(){
+function setThird(t){
+  if(!AUD3_ALLOWED.includes(t)) return;          // scores only, by design
+  aud3Target=t;
+  document.querySelectorAll('.s3b').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  pushSecond();
+}
+function audPayload(withSound,forceScreen){
   return {type:'picpa2', teams:S.teams, tname:S.tname, marks:S.marks, wrong:S.wrong, used:S.used, cat:S.cat, slot:S.slot,
-          screen:(audTarget==='mirror'? S.screen : audTarget),
+          screen:(forceScreen || (audTarget==='mirror'? S.screen : audTarget)),
           revealed:revealed, spView:spView, spIdx:spIdx,
-          timerLeft:timerLeft, timerMax:timerMax, snd:soundOn, mecIdx:mecIdx, cfgV:cfgVer};
+          timerLeft:timerLeft, timerMax:timerMax,
+          snd:(withSound===false? false : soundOn), mecIdx:mecIdx, cfgV:cfgVer};
 }
 function pushSecond(){
-  if(!audWin||audWin.closed)return;
-  try{ audWin.postMessage(audPayload(),'*'); }catch(e){}
+  if(audWin&&!audWin.closed){ try{ audWin.postMessage(audPayload(true),'*'); }catch(e){} }
+  if(audWin2&&!audWin2.closed){
+    const v=AUD3_ALLOWED.includes(aud3Target)?aud3Target:'sc-tab';
+    try{ audWin2.postMessage(audPayload(false,v),'*'); }catch(e){}
+  }
 }
 
 /* --- child side --- */
