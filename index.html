@@ -497,6 +497,8 @@ body.child .score-strip{display:none!important;}
 .hz.left{min-width:190px;}
 .hz.center{flex:1;justify-content:center;gap:10px;}
 .hz.right{min-width:190px;justify-content:flex-end;}
+.tabonly{display:none;font-family:'Montserrat',sans-serif;font-size:10.5px;font-weight:700;
+  letter-spacing:1.4px;text-transform:uppercase;color:rgba(201,162,39,.72);white-space:nowrap;}
 .glabel{font-size:8.5px;font-weight:800;letter-spacing:1.8px;color:rgba(201,162,39,.75);text-transform:uppercase;white-space:nowrap;}
 .vr{width:1px;height:20px;background:rgba(255,255,255,.10);margin:0 4px;flex-shrink:0;}
 
@@ -939,8 +941,9 @@ body.child #sc-sheet .sh-foot,body.audience #sc-sheet .sh-foot{padding-bottom:cl
     </div>
 
     <div class="hz center">
-      <span class="glabel">Display</span>
-      <div class="seg" id="segScreen">
+      <span class="tabonly" id="tab-role">Scoring station &mdash; score entry only</span>
+      <span class="glabel cc-nav">Display</span>
+      <div class="seg cc-nav" id="segScreen">
         <button class="sgb" data-s="sc-idle"     onclick="go('sc-idle')">Standby</button>
         <button class="sgb" data-s="sc-mech"     onclick="go('sc-mech')">Mechanics</button>
         <button class="sgb" data-s="sc-grid"     onclick="go('sc-grid')">Quiz</button>
@@ -952,7 +955,7 @@ body.child #sc-sheet .sh-foot,body.audience #sc-sheet .sh-foot{padding-bottom:cl
     </div>
 
     <div class="hz right">
-      <button class="hb" id="b-open2" onclick="openSecond()">🖥 2nd Screen</button>
+      <button class="hb cc-nav" id="b-open2" onclick="openSecond()">🖥 2nd Screen</button>
       <button class="hicon on" id="b-sound" onclick="toggleSound()" title="Sound on/off (B)">🔊</button>
       <button class="hb" onclick="openM('m-res')" title="Official results PDF">📄 Results</button>
       <button class="hicon cc-only" onclick="cfgOpen()" title="Settings — questions &amp; timers">⚙</button>
@@ -1319,6 +1322,11 @@ function rankings(){ return rankTeams(null); }
 
 /* ═══ SCREENS ═══ */
 function go(id,push=true){
+  /* The Tabulator is a scoring station, not a display driver: it owns exactly
+     one screen and cannot be navigated off it. The lock lives HERE rather than
+     only on the buttons, because a keyboard shortcut, a stale click or a future
+     caller would otherwise walk it away from the scoresheet mid-round. */
+  if(MODE==='tab' && !IS_CHILD && id!=='sc-sheet') id='sc-sheet';
   setTimeout(pushSecond,0); setTimeout(hudCtx,0);
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const el=document.getElementById(id); if(el) el.classList.add('active');
@@ -1867,18 +1875,27 @@ function sheetEditable(){ return !IS_CHILD && (MODE==='cc'||MODE==='tab'); }
 /* The rail edits a question pointer of its own. It defaults to whatever is live,
    but the operator can step back to fix an earlier question without moving the
    projector off the current one. */
+/* The Tabulator is a standalone scoring station. Once its operator picks a
+   round or a question themselves, the Command Center must stop moving them:
+   otherwise the round snaps back on the next 2.5s poll while the question
+   number stays put, and a tick lands in the WRONG ROUND without anyone
+   noticing. shManual latches that hand-over; "Back to the live question"
+   is the only thing that gives control back. */
 let shSlot=null;                       // null = follow the live question
+let shManual=false;                    // true = operator is driving, ignore the CC
 function shTarget(){ return (shSlot===null? S.slot : shSlot); }
 function shStep(d){
   const n=(BANKS[S.cat]||[]).length; if(!n)return;
   let cur=shTarget(); if(cur<0)cur=0; else cur+=d;
   shSlot=Math.max(0,Math.min(n-1,cur));
+  if(MODE!=='cc') shManual=true;
   renderSheet();
 }
-function shFollow(){ shSlot=null; renderSheet(); }
+function shFollow(){ shSlot=null; shManual=false; renderSheet(); }
 function shRound(r){
-  if(MODE==='cc'){ setCat(r,false); sync(); } else { S.cat=r; }
-  shSlot=null; renderSheet();
+  if(MODE==='cc'){ setCat(r,false); sync(); shSlot=null; }
+  else { S.cat=r; shManual=true; shSlot=0; try{paintCat(r);}catch(e){} }
+  renderSheet();
 }
 
 function renderCards(){
@@ -1907,7 +1924,8 @@ function renderRail(){
   const bank=BANKS[S.cat]||[], q=shTarget();
   document.getElementById('rail-qn').textContent=(q>=0?q+1:'—');
   document.getElementById('rail-qof').textContent='/ '+bank.length;
-  document.getElementById('rail-live').classList.toggle('show', shSlot!==null && shSlot!==S.slot);
+  document.getElementById('rail-live').classList.toggle('show',
+      shManual || (shSlot!==null && shSlot!==S.slot));
 
   const qt=document.getElementById('rail-qtext'), item=(q>=0?bank[q]:null);
   qt.innerHTML = item ? (esc(item.q||'—')+(item.calc?' <b style="color:var(--gold)">∑</b>':''))
@@ -2031,7 +2049,8 @@ function renderSheet(){
   renderCards(); renderRail();
   if(ed) g.querySelectorAll('.sh-c-q[data-q]').forEach(c=>{
     c.onclick=()=>{ const qq=parseInt(c.dataset.q,10);
-      if(qq!==S.slot) shSlot=qq; sheetToggle(qq, parseInt(c.dataset.t,10)); };
+      if(qq!==S.slot){ shSlot=qq; if(MODE!=='cc') shManual=true; }
+      sheetToggle(qq, parseInt(c.dataset.t,10)); };
   });
   document.getElementById('sh-foot').textContent = ed
     ? 'Click a cell to cycle correct → incorrect → no mark  ·  syncs to both laptops and the projector'
@@ -2352,7 +2371,7 @@ async function cloudPull(){
     if(f){
       followTimer(f);
       if(f.used) S.used=f.used;
-      if(follow){
+      if(follow && !shManual){
         const changed=(f.cat!==S.cat)||(f.slot!==S.slot);
         if(f.cat&&f.cat!==S.cat){ S.cat=f.cat; paintCat(f.cat); }
         S.slot=(typeof f.slot==='number')?f.slot:-1;
@@ -2724,6 +2743,11 @@ function setMode(m){
   closeM('m-mode');
   const mp=document.getElementById('modepill');
   document.querySelectorAll('.cc-only').forEach(e=>e.style.display = m==='cc'?'':'none');
+  /* Display switching and the projector belong to the Command Center only. */
+  document.querySelectorAll('.cc-nav').forEach(e=>e.style.display = m==='cc'?'':'none');
+  /* explicit value, not '': .tabonly is display:none in CSS so it never flashes
+     for the Command Center, and clearing the inline style would fall back to it */
+  document.querySelectorAll('.tabonly').forEach(e=>e.style.display = m==='tab'?'inline-block':'none');
   const hud=document.getElementById('hud');
   if(m==='aud'){
     hud.style.opacity='0'; hud.style.pointerEvents='none';
@@ -2732,7 +2756,7 @@ function setMode(m){
   }else{
     hud.style.opacity='1'; hud.style.pointerEvents='all';
     document.body.classList.remove('audience');
-    if(m==='tab'){ buildSlotOptions(); renderScorer(); go('sc-scorer',false); }
+    if(m==='tab'){ buildSlotOptions(); renderScorer(); go('sc-sheet',false); }
     else go('sc-idle',false);
   }
   if(mp) mp.textContent = m==='cc'?'🖥️ COMMAND CENTER':m==='tab'?'📊 TABULATOR':'📺 AUDIENCE';
