@@ -169,6 +169,25 @@ body.child .sh-rail,body.audience .sh-rail{display:none;}
   padding-left:clamp(8px,.8vw,14px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;}
 .sh-lane.m1 .sh-nm{color:#7A5C00;}
 
+/* Team identity: the real name reads first, the fixed slot stays visible
+   underneath it so an operator can still find "Team 7" at a glance. */
+.rt-n .rt-s{display:block;font-style:normal;font-size:9px;font-weight:700;letter-spacing:.6px;
+  color:#7A8394;text-transform:uppercase;margin-top:1px;}
+.rt-row.correct .rt-n .rt-s,.rt-row.wrong .rt-n .rt-s{color:#5A6270;}
+.sh-nm .sh-sub{display:block;font-size:.46em;font-weight:700;letter-spacing:.9px;
+  color:#8A93A3;text-transform:uppercase;margin-top:1px;line-height:1.25;}
+.sh-lane.m1 .sh-nm .sh-sub{color:#A08328;}
+.rrow .tn .tn-s{display:block;font-size:11px;font-weight:700;letter-spacing:1.1px;
+  color:#8A93A3;text-transform:uppercase;line-height:1.3;margin-top:1px;}
+.sc-ranks .rrow .tn .tn-s{font-size:9.5px;}
+.tbtn .tsub{display:block;font-size:8.5px;font-weight:700;letter-spacing:.7px;
+  opacity:.55;text-transform:uppercase;}
+/* Setup: slot field narrow and fixed, real name takes the room */
+.mf-team{display:grid;grid-template-columns:100px 1fr;gap:6px;align-items:center;}
+.mf-team label{grid-column:1/-1;margin-bottom:1px;}
+.mf-team .ti-slot{text-align:center;font-weight:700;padding-left:6px;padding-right:6px;}
+.rt .slotc{font-family:'Courier New',monospace;font-size:.86em;color:#555;white-space:nowrap;}
+
 /* mark chips */
 .sh-chip{width:clamp(19px,2.1vw,38px);height:clamp(19px,2.1vw,38px);border-radius:50%;
   display:flex;align-items:center;justify-content:center;font-size:clamp(10px,1.2vw,21px);
@@ -340,7 +359,7 @@ body.editable .sh-c-q:hover .sh-chip{transform:scale(1.16);}
 .rrow{display:grid;grid-template-columns:84px 1fr 74px 74px 74px 74px 120px;align-items:center;background:rgba(255,255,255,.97);border-radius:12px;padding:12px 18px;box-shadow:0 4px 16px rgba(0,0,0,.3);border-left:6px solid #D9D9D9;gap:8px;color:#111;transition:all .4s;}
 .rrow .rk{font-size:32px;font-weight:800;color:#1F2A44;text-align:center;line-height:1;}
 .rrow .rk .sf{font-size:15px;opacity:.6;}
-.rrow .tn{font-size:20px;font-weight:700;color:#1F2A44;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rrow .tn{font-size:20px;font-weight:700;color:#1F2A44;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.18;}
 .rrow .sg{text-align:center;font-size:17px;color:#1F2A44;font-weight:700;}
 .rrow .sg .lb{display:block;font-size:9px;color:#888;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;font-weight:700;}
 .rrow .tt{text-align:center;font-size:28px;font-weight:800;color:#1F2A44;background:#FFF4C7;padding:8px 10px;border-radius:10px;border:2px solid var(--gold);line-height:1;}
@@ -1063,7 +1082,7 @@ body.child #sc-sheet .sh-foot,body.audience #sc-sheet .sh-foot{padding-bottom:cl
 <!-- SETUP MODAL -->
 <div class="mo" id="m-setup"><div class="mb">
   <h3>⚙ Event Setup — Teams</h3>
-  <div class="note">Enter your team names. These flow into the scoring strip, the live Tabulation, and the Champion screen. Leave a field blank to hide that team.</div>
+  <div class="note">Each slot <b>Team 1</b>–<b>Team 12</b> is fixed: it never moves, and every score is recorded against it. Add the team&rsquo;s real name beside its slot and that name is what the audience sees, with the slot kept small alongside it. Leave the <b>slot</b> field blank to hide that team entirely.</div>
   <div class="tg" id="team-inputs"></div>
   <div class="ma">
     <button class="mbtn mb-g" onclick="closeM('m-setup')">Cancel</button>
@@ -1166,11 +1185,34 @@ const NTEAMS=12;
 
 /* ═══ SHARED STATE (synced) ═══ */
 let S = {
+  /* teams[i] is the SLOT — "Team 1".."Team 12". It never moves, every mark is
+     keyed on its index, and the paper scoresheet is keyed on it too. Blanking
+     one hides that team.
+     tname[i] is the team's REAL name, optional. It is display only: nothing is
+     ever keyed on it, so a late rename cannot disturb a single recorded mark. */
   teams: Array.from({length:NTEAMS},(_,i)=>'Team '+(i+1)),
+  tname: Array.from({length:NTEAMS},()=>''),
   // marks[round][slot] = [teamIdx,...]
   marks: {}, wrong: {}, used: {}, screen:'sc-idle', cat:'easy', slot:-1, rev:0
 };
 ROUNDS.forEach(r=>{ S.marks[r]={}; S.wrong[r]={}; S.used[r]=[]; });
+
+/* ═══ TEAM IDENTITY — one place, used by every surface ═══════════════════
+   slotLabel  the fixed "Team N" the quizmaster calls and the paper sheet uses
+   realName   what the team calls itself, or '' if not given
+   teamActive whether this slot is in play (drives every filter)
+   teamMain   the primary display name — real name if set, else the slot
+   teamFull   both, for records and tooltips: "Team 7 · Falcons"              */
+function slotLabel(i){ return 'Team '+(i+1); }
+function realName(i){ return String((S.tname||[])[i]||'').trim(); }
+function teamActive(i){ const n=S.teams[i]; return !!(n && String(n).trim()); }
+function teamMain(i){ return realName(i) || String(S.teams[i]||slotLabel(i)).trim(); }
+function teamSub(i){ /* the small line; empty when there is nothing extra to say */
+  const r=realName(i), s=String(S.teams[i]||slotLabel(i)).trim();
+  return r ? s : '';
+}
+function teamFull(i){ const r=realName(i); const s=String(S.teams[i]||slotLabel(i)).trim();
+  return r ? s+' · '+r : s; }
 
 const PRESETS_BUILTIN={easy:10,average:10,difficult:10,clincher:30,calc:30};
 let presets={...PRESETS_BUILTIN};
@@ -1254,12 +1296,16 @@ function clincherWins(ti){ return correctCount('clincher',ti); }
    clincher wins as the tiebreak). scope:'<round>' ranks within one round on
    that round's own value, with the overall total as the tiebreak. */
 function rankTeams(scope){
-  const rows=S.teams.map((name,idx)=>({idx,name,
+  /* name = what to show big; sub = the small slot line; slot/real kept
+     separately so the records can carry both as their own columns. */
+  const rows=S.teams.map((_,idx)=>({idx,
+    name:teamMain(idx), sub:teamSub(idx), slot:String(S.teams[idx]||slotLabel(idx)).trim(),
+    real:realName(idx), full:teamFull(idx),
     easy:roundValue('easy',idx), average:roundValue('average',idx),
     difficult:roundValue('difficult',idx), clincher:clincherWins(idx),
     total:totalScore(idx),
     val: scope? roundValue(scope,idx) : totalScore(idx)
-  })).filter(r=>r.name && r.name.trim());
+  })).filter(r=>teamActive(r.idx));
   rows.sort((a,b)=> b.val-a.val || (scope? b.total-a.total : b.clincher-a.clincher) || a.idx-b.idx);
   let rank=0,lastV=null,lastT=null;
   rows.forEach((r,i)=>{
@@ -1357,10 +1403,12 @@ function renderTeamBtns(){
   const w=document.getElementById('team-btns'); if(!w)return; w.innerHTML='';
   const key=S.slot, marked=(S.marks[S.cat]||{})[key]||[];
   S.teams.forEach((name,ti)=>{
-    if(!name||!name.trim())return;
+    if(!teamActive(ti))return;
     const b=document.createElement('button');
     b.className='tbtn'+(marked.includes(ti)?' correct':'');
-    b.innerHTML=esc(name)+'<span class="tp">'+totalScore(ti)+' pts</span>';
+    b.title=teamFull(ti);
+    b.innerHTML=esc(teamMain(ti))+(teamSub(ti)?'<span class="tsub">'+esc(teamSub(ti))+'</span>':'')+
+                '<span class="tp">'+totalScore(ti)+' pts</span>';
     b.onclick=()=>toggleMark(ti);
     w.appendChild(b);
   });
@@ -1866,11 +1914,13 @@ function renderRail(){
                       : '<i style="opacity:.5">No question selected</i>';
 
   document.getElementById('rail-teams').innerHTML=S.teams.map((nm,i)=>{
-    if(!nm||!nm.trim())return '';
+    if(!teamActive(i))return '';
     const st=markState(S.cat,q,i);
     const cls=st===1?' correct':(st===0?' wrong':'');
+    const sub=teamSub(i);
     return '<div class="rt-row'+cls+'">'+
-      '<span class="rt-i">'+(i+1)+'</span><span class="rt-n" title="'+esc(nm)+'">'+esc(nm)+'</span>'+
+      '<span class="rt-i">'+(i+1)+'</span><span class="rt-n" title="'+esc(teamFull(i))+'">'+
+        esc(teamMain(i))+(sub?'<i class="rt-s">'+esc(sub)+'</i>':'')+'</span>'+
       '<button class="rt-b rt-y'+(st===1?' on':'')+'" onclick="railMark('+i+',1)" title="Correct">✓</button>'+
       '<button class="rt-b rt-x'+(st===0?' on':'')+'" onclick="railMark('+i+',0)" title="Incorrect">✗</button></div>';
   }).join('');
@@ -1883,7 +1933,7 @@ function railMark(ti,val){
 /* ---- CSV export: the full team × question matrix, audit-ready ---- */
 function exportCSV(){
   const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
-  const head=['Team'], rowsOut=[];
+  const head=['Slot','Team Name'], rowsOut=[];
   ROUNDS.forEach(r=>{
     const n=(BANKS[r]||[]).length, L=CAT_META[r].label.toUpperCase();
     for(let i=0;i<n;i++) head.push(L+' Q'+(i+1));
@@ -1891,8 +1941,10 @@ function exportCSV(){
   });
   head.push('GRAND TOTAL');
   S.teams.forEach((nm,ti)=>{
-    if(!nm||!nm.trim())return;
-    const row=[nm];
+    if(!teamActive(ti))return;
+    /* Slot is what every mark is keyed on; the real name is for reading.
+       Both columns so a disputed mark ties back to the paper sheet. */
+    const row=[String(nm).trim(), realName(ti)];
     ROUNDS.forEach(r=>{
       const n=(BANKS[r]||[]).length, marks=S.marks[r]||{}, used=S.used[r]||[];
       for(let i=0;i<n;i++){
@@ -1943,7 +1995,7 @@ function renderSheet(){
   const byIdx={}; ranked.forEach(x=>byIdx[x.idx]=x);
   const rows=S.teams.map((name,idx)=>byIdx[idx]).filter(Boolean)
     .sort((a,b)=>a.idx-b.idx)                      // rows never move; only the rank does
-    .map(x=>({idx:x.idx,name:x.name,sc:x.val,tot:x.total,rank:x.rank}));
+    .map(x=>({idx:x.idx,name:x.name,sub:x.sub,full:x.full,sc:x.val,tot:x.total,rank:x.rank}));
   const anyScore=rows.some(x=>x.sc>0);
 
   let h='<div class="sh-row sh-head-row">'+
@@ -1956,7 +2008,8 @@ function renderSheet(){
     const medal=anyScore&&row.sc>0&&row.rank<=3?(' m'+row.rank):'';
     h+='<div class="sh-row sh-lane'+medal+'">';
     h+='<div class="sh-c-rank">'+(anyScore?ordinal(row.rank):'&nbsp;')+'</div>';
-    h+='<div class="sh-c-name"><div class="sh-nm" title="'+esc(row.name)+'">'+esc(row.name)+'</div></div>';
+    h+='<div class="sh-c-name"><div class="sh-nm" title="'+esc(row.full)+'">'+esc(row.name)+
+       (row.sub?'<span class="sh-sub">'+esc(row.sub)+'</span>':'')+'</div></div>';
     for(let i=0;i<n;i++){
       const st=markState(r,i,row.idx);
       const played=isPlayed(r,i);
@@ -2047,7 +2100,7 @@ function renderTab(target){
     if(prevPos[r.idx]!==undefined){ const d=prevPos[r.idx]-i;
       if(d>0)mv='<span class="mv up">▲'+d+'</span>'; else if(d<0)mv='<span class="mv dn">▼'+Math.abs(d)+'</span>'; }
     row.innerHTML='<div class="rk">'+r.rank+'<span class="sf">'+ord(r.rank)+'</span></div>'+
-      '<div class="tn">'+esc(r.name)+' '+mv+'</div>'+
+      '<div class="tn">'+esc(r.name)+(r.sub?'<span class="tn-s">'+esc(r.sub)+'</span>':'')+' '+mv+'</div>'+
       '<div class="sg"><span class="lb">Easy</span>'+r.easy+'</div>'+
       '<div class="sg"><span class="lb">Average</span>'+r.average+'</div>'+
       '<div class="sg"><span class="lb">Difficult</span>'+r.difficult+'</div>'+
@@ -2100,8 +2153,12 @@ function startConfetti(){
 /* ═══ SETUP ═══ */
 function openM(id){
   if(id==='m-setup'){ const w=document.getElementById('team-inputs'); w.innerHTML='';
-    S.teams.forEach((t,i)=>{ const d=document.createElement('div'); d.className='mf';
-      d.innerHTML='<label>Team '+(i+1)+'</label><input type="text" id="ti'+i+'" value="'+esc(t)+'">';
+    S.teams.forEach((t,i)=>{ const d=document.createElement('div'); d.className='mf mf-team';
+      d.innerHTML='<label>Slot '+(i+1)+'</label>'+
+        '<input type="text" class="ti-slot" id="ti'+i+'" value="'+esc(t)+'" '+
+          'aria-label="Slot label for team '+(i+1)+'">'+
+        '<input type="text" class="ti-real" id="tn'+i+'" value="'+esc(realName(i))+'" '+
+          'placeholder="Real team name (optional)" aria-label="Real name for team '+(i+1)+'">';
       w.appendChild(d); }); }
   if(id==='m-share'){ document.getElementById('share-room').textContent=
       'This device is recorded as: '+whoAmI()+'  ·  every judgement it writes is stamped with that id'; cloudStatus(); }
@@ -2110,7 +2167,9 @@ function openM(id){
 function closeM(id){ document.getElementById(id).classList.remove('show'); }
 function saveTeams(){
   S.teams=S.teams.map((_,i)=>{ const e=document.getElementById('ti'+i); return e?e.value.trim():''; });
-  renderTeamBtns(); renderTab(); if(MODE==='tab')renderScorer(); closeM('m-setup'); pushTeams();
+  S.tname=S.teams.map((_,i)=>{ const e=document.getElementById('tn'+i); return e?e.value.trim():''; });
+  renderTeamBtns(); renderTab(); renderSheet(); if(MODE==='tab')renderScorer();
+  closeM('m-setup'); pushTeams();
 }
 function resetScores(){
   /* Checked here, not just hidden in the HUD: a hidden button is not a control. */
@@ -2255,7 +2314,7 @@ async function rowPushIfUnchanged(id,obj){
 function pushFlow(){ if(MODE!=='cc')return;
   rowPush('flow',{cat:S.cat,slot:S.slot,used:S.used,screen:S.screen,rev:S.rev,spView,spIdx,mecIdx,
                   tRun:timerRunning, tLeft:timerLeft, tMax:timerMax, tSeq:timerSeq, ts:Date.now()}); }
-function pushTeams(){ rowPush('teams',{teams:S.teams,ts:Date.now()}); }
+function pushTeams(){ rowPush('teams',{teams:S.teams,tname:S.tname,ts:Date.now()}); }
 function sync(){ pushSecond(); clearTimeout(pushT); pushT=setTimeout(pushFlow,350); }
 
 async function cloudPull(){
@@ -2267,6 +2326,7 @@ async function cloudPull(){
          if(typeof toast==='function' && MODE==='tab') toast('Questions/timers updated from the Command Center.',4200); } }catch(e){}
   const t=await rowPull('teams');
   if(t&&Array.isArray(t.teams)&&t.teams.length) S.teams=t.teams;
+  if(t&&Array.isArray(t.tname)) S.tname=t.tname;
   if(MODE==='aud'){
     const f=await rowPull('flow');
     if(f){
@@ -2403,7 +2463,7 @@ function setSecond(t){
   pushSecond();
 }
 function audPayload(){
-  return {type:'picpa2', teams:S.teams, marks:S.marks, wrong:S.wrong, used:S.used, cat:S.cat, slot:S.slot,
+  return {type:'picpa2', teams:S.teams, tname:S.tname, marks:S.marks, wrong:S.wrong, used:S.used, cat:S.cat, slot:S.slot,
           screen:(audTarget==='mirror'? S.screen : audTarget),
           revealed:revealed, spView:spView, spIdx:spIdx,
           timerLeft:timerLeft, timerMax:timerMax, snd:soundOn, mecIdx:mecIdx, cfgV:cfgVer};
@@ -2450,14 +2510,14 @@ function applyAud(d){
 
   // only redraw when something meaningful actually changed (stops the flicker)
   const sig=JSON.stringify([d.screen,d.cat,d.slot,d.revealed,d.spView,d.spIdx,d.mecIdx,
-                            d.teams,d.marks,d.wrong,d.used]);
+                            d.teams,d.tname,d.marks,d.wrong,d.used]);
   if(sig===_audSig){
     if(S.screen==='sc-question') updTimer();   // tick the number only
     return;
   }
   _audSig=sig;
 
-  S.teams=d.teams||S.teams; S.marks=d.marks||S.marks; S.wrong=d.wrong||S.wrong; S.used=d.used||S.used;
+  S.teams=d.teams||S.teams; S.tname=d.tname||S.tname; S.marks=d.marks||S.marks; S.wrong=d.wrong||S.wrong; S.used=d.used||S.used;
   if(d.cat&&d.cat!==S.cat) paintCat(d.cat);
   S.slot=(typeof d.slot==='number')?d.slot:-1;
   const mecChanged=(typeof d.mecIdx==='number'&&d.mecIdx!==mecIdx);
@@ -2539,12 +2599,12 @@ function roundReport(cat){
   const played=[]; for(let i=0;i<bank.length;i++){ if(isPlayed(cat,i)) played.push(i); }
   const ranked=rankTeams(cat); const byIdx={}; ranked.forEach(x=>byIdx[x.idx]=x);
   const rows=S.teams.map((n,ti)=>{
-    if(!n||!n.trim()||!byIdx[ti])return null;
+    if(!teamActive(ti)||!byIdx[ti])return null;
     const got=[], missed=[];
     Object.keys(marks).forEach(k=>{ if((marks[k]||[]).includes(ti)) got.push(parseInt(k)+1); });
     Object.keys(S.wrong[cat]||{}).forEach(k=>{ if(((S.wrong[cat]||{})[k]||[]).includes(ti)) missed.push(parseInt(k)+1); });
     got.sort((a,b)=>a-b); missed.sort((a,b)=>a-b);
-    return {name:n, got, missed, correct:got.length,
+    return {name:teamMain(ti), slot:byIdx[ti].slot, got, missed, correct:got.length,
             score:byIdx[ti].val, rank:byIdx[ti].rank, total:totalScore(ti)};
   }).filter(Boolean).sort((a,b)=>a.rank-b.rank||a.name.localeCompare(b.name));
   const top=rows.length?rows[0].score:0;
@@ -2555,11 +2615,12 @@ function roundReport(cat){
   h+='<div class="rep-meta"><span>Questions played: <b>'+played.length+'</b> of '+bank.length+'</span>'+
      '<span>Teams: <b>'+rows.length+'</b></span><span>Maximum obtainable: <b>'+
      (isWinRound(cat)? played.length+' wins' : played.length*pts+' pts')+'</b></span></div>';
-  h+='<table class="rt"><thead><tr><th class="num">Rank</th><th>Team</th><th>Answered correctly</th>'+
+  h+='<table class="rt"><thead><tr><th class="num">Rank</th><th>Slot</th><th>Team</th><th>Answered correctly</th>'+
      '<th>Judged incorrect</th>'+
      '<th class="num">Correct</th><th class="num">Round '+unit+'</th><th class="num">Cumulative</th></tr></thead><tbody>';
   rows.forEach(r=>{
-    h+='<tr'+(r.score===top&&top>0?' class="win"':'')+'><td class="num">'+r.rank+'</td><td>'+esc(r.name)+'</td>'+
+    h+='<tr'+(r.score===top&&top>0?' class="win"':'')+'><td class="num">'+r.rank+'</td>'+
+       '<td class="slotc">'+esc(r.slot)+'</td><td>'+esc(r.name)+'</td>'+
        '<td>'+(r.got.length?r.got.map(q=>'Q'+q).join(', '):'&mdash;')+'</td>'+
        '<td>'+(r.missed.length?r.missed.map(q=>'Q'+q).join(', '):'&mdash;')+'</td>'+
        '<td class="num">'+r.correct+'</td><td class="num">'+r.score+'</td><td class="tot">'+r.total+'</td></tr>';
@@ -2577,9 +2638,9 @@ function roundReport(cat){
 }
 function summaryReport(){
   const rows=S.teams.map((n,ti)=>{
-    if(!n||!n.trim())return null;
+    if(!teamActive(ti))return null;
     const per={}; ROUNDS.forEach(r=>{ per[r]=roundValue(r,ti); });
-    return {name:n, per, total:totalScore(ti)};
+    return {name:teamMain(ti), slot:String(S.teams[ti]||slotLabel(ti)).trim(), per, total:totalScore(ti)};
   }).filter(Boolean).sort((a,b)=>b.total-a.total||a.name.localeCompare(b.name));
   let rank=0,last=null;
   rows.forEach((r,i)=>{ if(r.total!==last){rank=i+1;last=r.total;} r.rank=rank; });
@@ -2589,11 +2650,12 @@ function summaryReport(){
   h+='<div class="rep-sub">Consolidated results &mdash; all rounds</div>';
   h+='<div class="rep-meta"><span>Teams: <b>'+rows.length+'</b></span><span>Scoring: Easy 1 &middot; Average 3 &middot; Difficult 5</span>'+
      '<span>Status: <b>'+(champTied?'TIE AT FIRST PLACE':'RESOLVED')+'</b></span></div>';
-  h+='<table class="rt"><thead><tr><th class="num">Rank</th><th>Team</th><th class="num">Easy<br>(1 pt)</th>'+
+  h+='<table class="rt"><thead><tr><th class="num">Rank</th><th>Slot</th><th>Team</th><th class="num">Easy<br>(1 pt)</th>'+
      '<th class="num">Average<br>(3 pts)</th><th class="num">Difficult<br>(5 pts)</th><th class="num">Clincher<br>(wins)</th>'+
      '<th class="num">TOTAL</th></tr></thead><tbody>';
   rows.forEach(r=>{
-    h+='<tr'+(r.rank===1&&r.total>0?' class="win"':'')+'><td class="num">'+r.rank+'</td><td>'+esc(r.name)+'</td>'+
+    h+='<tr'+(r.rank===1&&r.total>0?' class="win"':'')+'><td class="num">'+r.rank+'</td>'+
+       '<td class="slotc">'+esc(r.slot)+'</td><td>'+esc(r.name)+'</td>'+
        '<td class="num">'+r.per.easy+'</td><td class="num">'+r.per.average+'</td><td class="num">'+r.per.difficult+
        '</td><td class="num">'+r.per.clincher+'</td><td class="tot">'+r.total+'</td></tr>';
   });
