@@ -2051,7 +2051,10 @@ function renderTab(target){
       '<div class="sg"><span class="lb">Easy</span>'+r.easy+'</div>'+
       '<div class="sg"><span class="lb">Average</span>'+r.average+'</div>'+
       '<div class="sg"><span class="lb">Difficult</span>'+r.difficult+'</div>'+
-      '<div class="sg"><span class="lb">Clincher</span>'+r.clincher+'</div>'+
+      /* Labelled "Tiebreak", not "Clincher": this column sits between three
+         points columns and the TOTAL, and a bare number under a round name
+         reads as points. It is wins, and it is deliberately not in the total. */
+      '<div class="sg"><span class="lb">Tiebreak</span>'+r.clincher+'</div>'+
       '<div class="tt"><span class="lb">TOTAL</span>'+r.total+'</div>';
     w.appendChild(row);
   });
