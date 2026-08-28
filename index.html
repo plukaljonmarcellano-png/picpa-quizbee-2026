@@ -1242,7 +1242,11 @@ function AC(){ if(!_ac){try{_ac=new (window.AudioContext||window.webkitAudioCont
 /* When the 2nd screen is live it carries the room audio; keep the operator's
    laptop quiet by default so the hall doesn't hear a doubled, out-of-sync tick. */
 let ccAudio=false;
-function audMuted(){ return anySecond() && !ccAudio; }
+/* Mute the operator's laptop only when a display that ACTUALLY CARRIES SOUND
+   is open — that is screen 2. Screen 3 is deliberately silent, so counting it
+   here silenced the tick and the buzzer everywhere the moment someone opened
+   the scores display on its own. */
+function audMuted(){ return !IS_CHILD && audWin && !audWin.closed && !ccAudio; }
 function playTick(s){ if(!soundOn||audMuted())return; const a=AC(); if(!a)return; if(a.state==='suspended')a.resume();
   const t=a.currentTime,u=s<=5,o=a.createOscillator(),g=a.createGain();
   o.type=u?'square':'sine'; o.frequency.value=u?950:1500;
@@ -2705,7 +2709,7 @@ function roundReport(cat){
   const unit=roundUnit(cat);
   h+='<div class="rep-meta"><span>Questions played: <b>'+played.length+'</b> of '+bank.length+'</span>'+
      '<span>Teams: <b>'+rows.length+'</b></span><span>Maximum obtainable: <b>'+
-     (isWinRound(cat)? played.length+' wins' : played.length*pts+' pts')+'</b></span></div>';
+     (isWinRound(cat)? played.length+' wins' : played.length*m.pts+' pts')+'</b></span></div>';
   h+='<table class="rt"><thead><tr><th class="num">Rank</th><th>Slot</th><th>Team</th><th>Answered correctly</th>'+
      '<th>Judged incorrect</th>'+
      '<th class="num">Correct</th><th class="num">Round '+unit+'</th><th class="num">Cumulative</th></tr></thead><tbody>';
