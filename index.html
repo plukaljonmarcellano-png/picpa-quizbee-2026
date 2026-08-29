@@ -497,6 +497,31 @@ body.child .score-strip{display:none!important;}
 .hz.left{min-width:190px;}
 .hz.center{flex:1;justify-content:center;gap:10px;}
 .hz.right{min-width:190px;justify-content:flex-end;}
+/* AWARDS — deliberately one placement per screen so the hall applauds each
+   team on its own, instead of reading all three off a single board. */
+#sc-awards{display:none;}
+#sc-awards.active{display:flex;align-items:center;justify-content:center;position:relative;}
+.aw-in{position:relative;z-index:2;text-align:center;padding:0 5vw;max-width:1500px;}
+.aw-medal{font-size:clamp(64px,11vh,132px);line-height:1;margin-bottom:.4vh;
+  filter:drop-shadow(0 6px 18px rgba(0,0,0,.45));}
+.aw-place{font-family:'Bebas Neue',sans-serif;font-size:clamp(26px,5vh,58px);
+  letter-spacing:.16em;color:var(--gold);text-transform:uppercase;line-height:1;}
+#sc-awards .gold-line{margin:2.2vh auto;}
+.aw-names{display:flex;flex-direction:column;gap:1.2vh;margin-bottom:2.4vh;}
+.aw-nm{font-family:'Montserrat',sans-serif;font-weight:800;color:#fff;
+  font-size:clamp(30px,8.2vh,104px);line-height:1.04;letter-spacing:-.5px;
+  text-shadow:0 4px 26px rgba(0,0,0,.5);}
+.aw-slot{display:block;font-size:.30em;font-weight:700;letter-spacing:.22em;
+  color:rgba(255,255,255,.5);text-transform:uppercase;margin-top:.7vh;}
+.aw-score{font-family:'Montserrat',sans-serif;font-size:clamp(13px,2.1vh,23px);
+  font-weight:700;letter-spacing:.16em;color:rgba(255,255,255,.66);text-transform:uppercase;}
+.aw-score span:last-child{color:var(--gold);font-size:1.5em;}
+.aw-dots{display:flex;gap:9px;justify-content:center;margin-top:3.4vh;}
+.aw-dots i{width:32px;height:4px;border-radius:2px;background:rgba(255,255,255,.2);}
+.aw-dots i.on{background:var(--gold);}
+.aw-foot{margin-top:1.6vh;font-family:'Montserrat',sans-serif;font-size:11.5px;
+  letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.32);}
+body.child .aw-foot,body.audience .aw-foot{display:none;}
 #demobar{display:none;position:fixed;top:0;left:0;right:0;z-index:300;pointer-events:none;
   background:linear-gradient(90deg,#B8860B,#E0A526 55%,#B8860B);color:#2A1D00;
   font-family:'Montserrat',sans-serif;font-size:11.5px;font-weight:700;letter-spacing:.06em;
@@ -861,6 +886,20 @@ body.child #sc-sheet .sh-foot,body.audience #sc-sheet .sh-foot{padding-bottom:cl
   </div>
 </div>
 
+<!-- AWARDS — one placement at a time, for the awarding -->
+<div class="screen" id="sc-awards">
+  <canvas class="cf-canvas" id="cf2"></canvas>
+  <div class="aw-in">
+    <div class="aw-medal" id="aw-medal">&#129353;</div>
+    <div class="aw-place" id="aw-place">Third Place</div>
+    <div class="gold-line"></div>
+    <div class="aw-names" id="aw-names"></div>
+    <div class="aw-score"><span>TOTAL SCORE</span>&nbsp;&nbsp;<span id="aw-score">&mdash;</span></div>
+    <div class="aw-dots" id="aw-dots"></div>
+    <div class="aw-foot" id="aw-foot"></div>
+  </div>
+</div>
+
 
 <!-- SCORER (Tabulator laptop) -->
 <div class="screen" id="sc-scorer">
@@ -965,6 +1004,7 @@ body.child #sc-sheet .sh-foot,body.audience #sc-sheet .sh-foot{padding-bottom:cl
         <button class="sgb" data-s="sc-sponsors" onclick="go('sc-sponsors')">Sponsors</button>
         <button class="sgb" data-s="sc-tab"      onclick="go('sc-tab')">Standings</button>
         <button class="sgb" data-s="sc-sheet"   onclick="go('sc-sheet')">Scoresheet</button>
+        <button class="sgb" data-s="sc-awards"   onclick="showAwards()">Awards</button>
         <button class="sgb" data-s="sc-winner"   onclick="showChampion()">Champion</button>
       </div>
     </div>
@@ -1050,6 +1090,7 @@ body.child #sc-sheet .sh-foot,body.audience #sc-sheet .sh-foot{padding-bottom:cl
         <button class="sgb s3b on" data-t="sc-tab"      onclick="setThird('sc-tab')">Standings</button>
         <button class="sgb s3b"    data-t="sc-sheet"    onclick="setThird('sc-sheet')">Scoresheet</button>
         <button class="sgb s3b"    data-t="sc-sponsors" onclick="setThird('sc-sponsors')">Sponsors</button>
+        <button class="sgb s3b"    data-t="sc-awards"   onclick="setThird('sc-awards')">Awards</button>
         <button class="sgb s3b"    data-t="sc-winner"   onclick="setThird('sc-winner')">Champion</button>
       </div>
       <button class="hb" onclick="placeSecond(true,audWin2)" title="Move the 3rd screen onto an external display and go full screen">⛶ To Display</button>
@@ -1370,6 +1411,8 @@ function go(id,push=true){
   if(id==='sc-sheet'){ renderSheet(); }
   if(id==='sc-tab'){ renderTab(); }
   if(id==='sc-winner'){ startConfetti(); }
+  if(id==='sc-awards'){ renderAwards(); }
+  if(id!=='sc-winner' && id!=='sc-awards'){ stopConfetti(); }
   if(push) sync();
 }
 function setCat(c,push=true){ setTimeout(hudCtx,0);
@@ -2181,6 +2224,48 @@ function renderTab(target){
 }
 
 /* ═══ CHAMPION ═══ */
+/* ═══ AWARDS ═══════════════════════════════════════════════════════════
+   Revealed one placement at a time, in ceremony order: 3rd, then 2nd, then
+   the Champion. Grouped BY RANK, not by row, so a genuine tie shows both
+   teams on the same placement rather than silently awarding one of them. */
+let awIdx=0;
+function awardGroups(){
+  const rk=rankings().filter(r=>r.total>0 || r.clincher>0);
+  const byRank={};
+  rk.forEach(r=>{ (byRank[r.rank]=byRank[r.rank]||[]).push(r); });
+  return [3,2,1].map(n=>({rank:n,teams:byRank[n]||[]})).filter(g=>g.teams.length);
+}
+const AW_LBL={1:'Champion',2:'Second Place',3:'Third Place'};
+const AW_MEDAL={1:'\uD83E\uDD47',2:'\uD83E\uDD48',3:'\uD83E\uDD49'};
+function renderAwards(){
+  const g=awardGroups(); if(!g.length) return;
+  /* Clamp rather than bail: an index arriving from another device (or a tie
+     collapsing three placements into two) must never leave the previous
+     placement frozen on the projector. */
+  if(awIdx>=g.length) awIdx=g.length-1;
+  if(awIdx<0) awIdx=0;
+  const cur=g[awIdx];
+  document.getElementById('aw-medal').textContent=AW_MEDAL[cur.rank]||'\uD83C\uDFC6';
+  document.getElementById('aw-place').textContent=
+    AW_LBL[cur.rank]+(cur.teams.length>1?' \u2014 tied':'');
+  document.getElementById('aw-names').innerHTML=cur.teams.map(t=>
+    '<div class="aw-nm">'+esc(t.name)+(t.sub?'<span class="aw-slot">'+esc(t.sub)+'</span>':'')+'</div>').join('');
+  document.getElementById('aw-score').textContent=cur.teams[0].total;
+  document.getElementById('aw-dots').innerHTML=g.map((_,i)=>'<i class="'+(i===awIdx?'on':'')+'"></i>').join('');
+  document.getElementById('aw-foot').textContent=
+    (awIdx+1)+' of '+g.length+'  \u00b7  use \u2190 \u2192 to reveal the next placement';
+  if(cur.rank===1) startConfetti(); else stopConfetti();
+}
+function awStep(d){
+  const g=awardGroups(); if(!g.length)return;
+  awIdx=Math.max(0,Math.min(g.length-1,awIdx+d));
+  renderAwards(); sync();
+}
+function showAwards(){
+  const g=awardGroups();
+  if(!g.length){ alert('No scores recorded yet.\n\nThe Awards screen unlocks once teams have points on the board.'); return; }
+  awIdx=0; renderAwards(); go('sc-awards');
+}
 function showChampion(){
   const rk=rankings();
   if(!rk.length){ alert('No teams set up yet. Open ⚙ Setup to add team names.'); return; }
@@ -2201,8 +2286,18 @@ function showChampion(){
   go('sc-winner');
 }
 let cfA=null;
+/* Runs on whichever celebration screen is showing: the Champion tableau has
+   its own canvas, the Awards reveal another. */
+function confettiCanvas(){
+  return document.getElementById(S.screen==='sc-awards'?'cf2':'cf');
+}
+function stopConfetti(){
+  if(cfA){ cancelAnimationFrame(cfA); cfA=null; }
+  ['cf','cf2'].forEach(id=>{ const c=document.getElementById(id);
+    if(c){ const g=c.getContext('2d'); if(g) g.clearRect(0,0,c.width,c.height); } });
+}
 function startConfetti(){
-  const cv=document.getElementById('cf'); if(!cv)return; const x=cv.getContext('2d');
+  const cv=confettiCanvas(); if(!cv)return; const x=cv.getContext('2d');
   cv.width=window.innerWidth; cv.height=window.innerHeight;
   const cols=['#C9A227','#F4D76A','#27AE60','#2980B9','#fff','#FFF4C7'];
   const ps=Array.from({length:170},()=>({x:Math.random()*cv.width,y:Math.random()*cv.height-cv.height,
@@ -2381,7 +2476,7 @@ async function rowPushIfUnchanged(id,obj){
   }catch(e){ setDot('err'); return false; }
 }
 function pushFlow(){ if(MODE!=='cc')return;
-  rowPush('flow',{cat:S.cat,slot:S.slot,used:S.used,screen:S.screen,rev:S.rev,spView,spIdx,mecIdx,
+  rowPush('flow',{cat:S.cat,slot:S.slot,used:S.used,screen:S.screen,rev:S.rev,spView,spIdx,mecIdx,awIdx,
                   tRun:timerRunning, tLeft:timerLeft, tMax:timerMax, tSeq:timerSeq, ts:Date.now()}); }
 function pushTeams(){ rowPush('teams',{teams:S.teams,tname:S.tname,ts:Date.now()}); }
 function sync(){ pushSecond(); clearTimeout(pushT); pushT=setTimeout(pushFlow,350); }
@@ -2405,6 +2500,7 @@ async function cloudPull(){
       S.slot=(typeof f.slot==='number')?f.slot:-1;
       if(typeof f.spIdx==='number') spIdx=f.spIdx;
       if(typeof f.mecIdx==='number'&&f.mecIdx!==mecIdx){ mecIdx=f.mecIdx; if(S.screen==='sc-mech') renderMech(); }
+      if(typeof f.awIdx==='number'&&f.awIdx!==awIdx){ awIdx=f.awIdx; if(S.screen==='sc-awards') renderAwards(); }
       if(f.spView&&f.spView!==spView) spView=f.spView;
       followTimer(f);
       let tgt=f.screen;
@@ -2498,7 +2594,7 @@ let audWin=null, audWin2=null, audTarget='mirror';
    question. It is restricted to the views that make sense unattended — no
    question screen, so an answer can never appear on the wrong display. */
 let aud3Target='sc-tab';
-const AUD3_ALLOWED=['sc-tab','sc-sheet','sc-sponsors','sc-winner'];
+const AUD3_ALLOWED=['sc-tab','sc-sheet','sc-sponsors','sc-awards','sc-winner'];
 /* Two display windows can be open at once (e.g. a projector facing the
    contestants and a TV facing the audience). Both mirror the same content.
    Only ONE of them carries sound: two windows ticking a second apart through
@@ -2606,7 +2702,7 @@ function audPayload(withSound,forceScreen){
           screen:(forceScreen || (audTarget==='mirror'? S.screen : audTarget)),
           revealed:revealed, spView:spView, spIdx:spIdx,
           timerLeft:timerLeft, timerMax:timerMax,
-          snd:(withSound===false? false : soundOn), mecIdx:mecIdx, cfgV:cfgVer};
+          snd:(withSound===false? false : soundOn), mecIdx:mecIdx, awIdx:awIdx, cfgV:cfgVer};
 }
 function pushSecond(){
   if(audWin&&!audWin.closed){ try{ audWin.postMessage(audPayload(true),'*'); }catch(e){} }
@@ -2652,7 +2748,7 @@ function applyAud(d){
   timerLeft=d.timerLeft; timerMax=d.timerMax;
 
   // only redraw when something meaningful actually changed (stops the flicker)
-  const sig=JSON.stringify([d.screen,d.cat,d.slot,d.revealed,d.spView,d.spIdx,d.mecIdx,
+  const sig=JSON.stringify([d.screen,d.cat,d.slot,d.revealed,d.spView,d.spIdx,d.mecIdx,d.awIdx,
                             d.teams,d.tname,d.marks,d.wrong,d.used]);
   if(sig===_audSig){
     if(S.screen==='sc-question') updTimer();   // tick the number only
@@ -2665,6 +2761,7 @@ function applyAud(d){
   S.slot=(typeof d.slot==='number')?d.slot:-1;
   const mecChanged=(typeof d.mecIdx==='number'&&d.mecIdx!==mecIdx);
   if(typeof d.mecIdx==='number') mecIdx=d.mecIdx;
+  if(typeof d.awIdx==='number') awIdx=d.awIdx;
   const spChanged=(typeof d.spIdx==='number'&&d.spIdx!==spIdx)||(d.spView&&d.spView!==spView);
   if(typeof d.spIdx==='number') spIdx=d.spIdx;
   if(d.spView) spView=d.spView;
@@ -2963,8 +3060,10 @@ document.addEventListener('keydown',e=>{
     case 'k': case 'K': go('sc-mech'); break;
     case 'g': case 'G': if(MODE==='cc') cfgOpen(); break;
     case 's': case 'S': go('sc-sheet'); break;
-    case 'ArrowRight': if(S.screen==='sc-mech'){ e.preventDefault(); mecStep(1); } break;
-    case 'ArrowLeft':  if(S.screen==='sc-mech'){ e.preventDefault(); mecStep(-1); } break;
+    case 'ArrowRight': if(S.screen==='sc-mech'){ e.preventDefault(); mecStep(1); }
+                       else if(S.screen==='sc-awards'){ e.preventDefault(); awStep(1); } break;
+    case 'ArrowLeft':  if(S.screen==='sc-mech'){ e.preventDefault(); mecStep(-1); }
+                       else if(S.screen==='sc-awards'){ e.preventDefault(); awStep(-1); } break;
     case 'm': case 'M': switchMode(); break;
     case '1': setCat('easy'); break;
     case '2': setCat('average'); break;
