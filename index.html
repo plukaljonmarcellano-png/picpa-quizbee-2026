@@ -497,6 +497,21 @@ body.child .score-strip{display:none!important;}
 .hz.left{min-width:190px;}
 .hz.center{flex:1;justify-content:center;gap:10px;}
 .hz.right{min-width:190px;justify-content:flex-end;}
+#demobar{display:none;position:fixed;top:0;left:0;right:0;z-index:300;pointer-events:none;
+  background:linear-gradient(90deg,#B8860B,#E0A526 55%,#B8860B);color:#2A1D00;
+  font-family:'Montserrat',sans-serif;font-size:11.5px;font-weight:700;letter-spacing:.06em;
+  text-align:center;padding:5px 14px;box-shadow:0 2px 10px rgba(0,0,0,.4);
+  text-transform:uppercase;}
+#demobar b{font-weight:800;letter-spacing:.12em;}
+#demobar code{background:rgba(0,0,0,.16);border-radius:3px;padding:0 4px;font-size:11px;
+  text-transform:none;letter-spacing:0;}
+body.demo #demobar{display:block;}
+/* The bar must DISPLACE the screen, not sit on top of the event title.
+   Mirrors how the bottom HUD reserves space via --hudh. */
+body.demo .screen{margin-top:var(--demoh,24px);
+  height:calc(100vh - var(--hudh,46px) - var(--demoh,24px));}
+body.demo.child .screen,body.demo.audience .screen{
+  height:calc(100vh - var(--demoh,24px));}
 .tabonly{display:none;font-family:'Montserrat',sans-serif;font-size:10.5px;font-weight:700;
   letter-spacing:1.4px;text-transform:uppercase;color:rgba(201,162,39,.72);white-space:nowrap;}
 .glabel{font-size:8.5px;font-weight:800;letter-spacing:1.8px;color:rgba(201,162,39,.75);text-transform:uppercase;white-space:nowrap;}
@@ -1542,6 +1557,7 @@ let cfgDraft=null, cfgRound='easy', cfgVer=0;
 
 function cfgApply(c,quiet){
   if(!c)return false;
+  if(IS_DEMO && c.banks){ c={...c}; delete c.banks; }   // rehearsal keeps the sample set
   /* A deploy that ships a new question set must win over an older saved one,
      otherwise last week's questions would quietly outlive the update. The
      operator's own later edits carry a newer stamp and still take precedence. */
@@ -2289,6 +2305,7 @@ async function retryPending(){
   for(const p of q){ await markPush(p.round,p.slot,p.team,p.add,p.val,true); }
 }
 async function markPush(round,slot,team,add,val,isRetry){
+  if(IS_DEMO) return;                              // rehearsal never touches the contest data
   if(typeof val!=='number') val=1;                 // default: a plain mark means correct
   try{
     let r;
@@ -2330,6 +2347,7 @@ async function marksPull(){
 
 /* --- flow (owned by Command Center) & teams (either laptop) --- */
 async function rowPush(id,obj){
+  if(IS_DEMO) return;
   try{ const r=await fetch(REST+'quizbee_state?id=eq.'+id,{method:'PATCH',
       headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({state:obj})});
     setDot(r.ok?'ok':'err'); }catch(e){ setDot('err'); }
@@ -2348,6 +2366,7 @@ async function rowPull(id){
    two machines with minutes of skew still order their edits correctly.
    Returns true on success, false if someone else got there first. */
 async function rowPushIfUnchanged(id,obj){
+  if(IS_DEMO) return true;
   const base=rowRev[id];
   if(typeof base!=='number'){ await rowPull(id); }
   const q='quizbee_state?id=eq.'+id+(typeof rowRev[id]==='number'?'&rev=eq.'+rowRev[id]:'');
@@ -2368,6 +2387,7 @@ function pushTeams(){ rowPush('teams',{teams:S.teams,tname:S.tname,ts:Date.now()
 function sync(){ pushSecond(); clearTimeout(pushT); pushT=setTimeout(pushFlow,350); }
 
 async function cloudPull(){
+  if(IS_DEMO) return;                 // a poll would erase the rehearsal marks
   if(pulling)return; pulling=true;
   await retryPending();
   await marksPull();
@@ -2442,6 +2462,34 @@ function hudCtx(){
 /* ═══ SECOND SCREEN (popup window on this laptop) ═══ */
 const QP=new URLSearchParams(location.search);
 const IS_CHILD = QP.get('screen')==='1';
+/* ═══ REHEARSAL MODE (?demo=1) ═══════════════════════════════════════════
+   Sample questions for testing the displays, the timer and the buzzer.
+   It writes NOTHING to the cloud and reads nothing from it, so a rehearsal
+   can never leave marks in the real contest or overwrite the real bank.
+   Displays opened from a rehearsing Command Center inherit the flag.       */
+const IS_DEMO = QP.get('demo')==='1';
+const DEMO_BANKS={
+  easy:[
+    {q:'What is the capital city of Japan?',ans:'Tokyo',calc:false},
+    {q:'In arithmetic, what is 15% of 240?',ans:'36',calc:true},
+    {q:'This is a deliberately long sample question, written to check how the display handles a question that runs to several lines on the projector — so you can confirm the text stays readable from the back of the hall and the layout does not break. Is it still readable?',ans:'Yes',calc:false}],
+  average:[
+    {q:'Which planet in our solar system has the most moons?',ans:'Saturn',calc:false},
+    {q:'A shirt costs SAR 120 after a 25% discount. What was its original price?',ans:'SAR 160',calc:true},
+    {q:'Who wrote the play “Romeo and Juliet”?',ans:'William Shakespeare',calc:false}],
+  difficult:[
+    {q:'What is the chemical symbol for tungsten?',ans:'W',calc:false},
+    {q:'A train travels 180 kilometres in 2 hours and 30 minutes. What is its average speed?',ans:'72 km/h',calc:true}],
+  clincher:[
+    {q:'Which ocean is the largest by surface area?',ans:'The Pacific Ocean',calc:false},
+    {q:'How many degrees do the interior angles of a triangle add up to?',ans:'180 degrees',calc:false}]
+};
+function applyDemo(){
+  ROUNDS.forEach(r=>{ BANKS[r]=DEMO_BANKS[r].map(q=>({q:q.q,ans:q.ans,calc:!!q.calc})); });
+  /* class on <body>, not an inline style on #demobar: this runs during INIT,
+     which is before the banner element further down the document exists. */
+  document.body.classList.add('demo');
+}
 const URL_ROLE = (QP.get('role')||'').toLowerCase();   // admin | tabulator | screen
 const ADMIN_PIN = '2026';
 let audWin=null, audWin2=null, audTarget='mirror';
@@ -2514,7 +2562,7 @@ function openThird(toProjector){ openDisplay(3,toProjector); }
 function openDisplay(n,toProjector){
   const cur = n===3?audWin2:audWin;
   if(cur && !cur.closed){ cur.focus(); return; }
-  const u=location.href.split('?')[0].split('#')[0]+'?screen=1';
+  const u=location.href.split('?')[0].split('#')[0]+'?screen=1'+(IS_DEMO?'&demo=1':'');
   const w=window.open(u, n===3?'picpa_third':'picpa_second','width=1280,height=800');
   if(!w){ alert('Your browser blocked the pop-up.\n\nAllow pop-ups for this page, then click "'+n+(n===3?'rd':'nd')+' Screen" again.'); return; }
   if(n===3) audWin2=w; else audWin=w;
@@ -2941,6 +2989,7 @@ if(IS_CHILD){
   MODE='aud'; document.body.classList.add('child');
   const h=document.getElementById('hud'); if(h){h.style.display='none';}
   cfgLoadLocal();                 // same browser → same saved questions, sponsors and timers
+  if(IS_DEMO) applyDemo();
   go('sc-idle',false);
 }else{
   if(URL_ROLE==='tabulator'){ setMode('tab'); }
@@ -2954,11 +3003,13 @@ if(IS_CHILD){
     if(savedMode==='cc'||savedMode==='tab'||savedMode==='aud'){ setMode(savedMode); } else { openM('m-mode'); }
   }
   cfgLoadLocal();
+  if(IS_DEMO) applyDemo();
   setInterval(cloudPull, 2500);
 }          // both laptops poll: scores merge live
 measHud(); setTimeout(measHud,300);
 </script>
 <datalist id="sal-opts"><option value="MR."><option value="MS."><option value="MRS."><option value="DR."><option value="DRA."><option value="ENGR."><option value="ATTY."><option value="CPA"><option value="CHEF"></datalist>
+<div id="demobar"><b>Rehearsal mode</b> &mdash; sample questions. Nothing is saved to the contest; remove <code>&amp;demo=1</code> from the address for the real event.</div>
 <div id="toast"></div>
 <div id="sndlock" onclick="unlockAudio()">🔇 Click anywhere to turn on sound</div>
 </body>
